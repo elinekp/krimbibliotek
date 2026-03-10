@@ -7,15 +7,24 @@ class Author(models.Model):
     def __str__(self):
         return self.name
 
+class Genre(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.name
+
 class Work(models.Model):
     title = models.CharField(max_length=255)
     author = models.ForeignKey(
         Author, 
-        on_delete=models.SET_NULL,  # Endret fra CASCADE
-        null=True,                  # Påkrevd for SET_NULL
-        blank=True,                 # Tillater at feltet er tomt i skjemaer
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
         related_name='works'
     )
+
+    genres = models.ManyToManyField(Genre, blank=True, related_name='works')
     summary = models.TextField(blank=True)
     original_publication_year = models.IntegerField(null=True, blank=True)
 
