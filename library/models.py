@@ -44,3 +44,28 @@ class Work(models.Model):
 
     def __str__(self):
         return self.title
+
+class Item(models.Model):
+    FORMAT_CHOICES = [
+        ('hardcover', 'Hardcover'),
+        ('paperback', 'Paperback'),
+        ('ebook', 'E-book'),
+        ('audiobook', 'Audiobook'),
+    ]
+
+    work = models.ForeignKey(
+        Work, 
+        on_delete=models.SET_NULL, # Endret fra CASCADE
+        null=True,                 # Påkrevd for SET_NULL
+        blank=True, 
+        related_name='items'
+    )
+    isbn = models.CharField(max_length=13, blank=True, verbose_name="ISBN")
+    publisher = models.CharField(max_length=255, blank=True)
+    publication_year = models.IntegerField(null=True, blank=True)
+    format = models.CharField(max_length=20, choices=FORMAT_CHOICES, default='hardcover')
+    is_loaned = models.BooleanField(default=False)
+
+    def __str__(self):
+        title = self.work.title if self.work else "Unknown Work"
+        return f"{title} ({self.publisher})"
