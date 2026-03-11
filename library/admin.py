@@ -12,11 +12,11 @@ class RoleAdmin(admin.ModelAdmin):
 
 @admin.register(Genre)
 class GenreAdmin(admin.ModelAdmin):
-    list_display = ('name',)
+    list_display = ('name', 'parent')
 
 @admin.register(AppealFactor)
 class AppealFactorAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category')
+    list_display = ('name', 'category', 'parent')
     list_filter = ('category',)
 
 @admin.register(Work)

@@ -18,9 +18,16 @@ class Role(models.Model):
 class Genre(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
+    parent = models.ForeignKey(
+        'self', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='subgenres'
+    )
 
     def __str__(self):
-        return self.name
+        return f"{self.parent.name} > {self.name}" if self.parent else self.name
 
 class AppealFactor(models.Model):
     CATEGORY_CHOICES = [
@@ -34,9 +41,17 @@ class AppealFactor(models.Model):
     name = models.CharField(max_length=100)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
     description = models.TextField(null=True, blank=True)
+    parent = models.ForeignKey(
+        'self', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='subfactors'
+    )
 
     def __str__(self):
-        return f"{self.category}: {self.name}"
+        hierarchy = f"{self.parent.name} > " if self.parent else ""
+        return f"{self.category}: {hierarchy}{self.name}"
 
 class Work(models.Model):
     preferred_title = models.CharField(max_length=255)
