@@ -1,70 +1,83 @@
 from django.db import models
 
-class Author(models.Model):
+class Agent(models.Model):
     name = models.CharField(max_length=255)
-    nationality = models.CharField(max_length=100, blank=True)
-    birth_year = models.IntegerField(null=True, blank=True)
-    biography = models.TextField(blank=True)
-    image_url = models.URLField(blank=True, verbose_name="Image URL")
-
+    uri = models.URLField(max_length=500, null=True, blank=True)
+    biography = models.TextField(null=True, blank=True)
+    
     def __str__(self):
         return self.name
 
-class Series(models.Model):
-    name = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
-
+class Role(models.Model):
+    name = models.CharField(max_length=100)
+    uri = models.URLField(max_length=500, null=True, blank=True)
+    
     def __str__(self):
         return self.name
 
 class Genre(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    description = models.TextField(blank=True)
+    name = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.name
 
 class AppealFactor(models.Model):
     CATEGORY_CHOICES = [
-        ('pace', 'Pace'),
-        ('tone', 'Tone'),
-        ('character', 'Character'),
-        ('style', 'Style'),
+        ('Pace', 'Pace'),
+        ('Tone', 'Tone'),
+        ('Writing Style', 'Writing Style'),
+        ('Characterization', 'Characterization'),
+        ('Storyline', 'Storyline'),
+        ('Frame', 'Frame'),
     ]
     name = models.CharField(max_length=100)
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
-    description = models.TextField(blank=True)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    description = models.TextField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.get_category_display()}: {self.name}"
+        return f"{self.category}: {self.name}"
 
 class Work(models.Model):
-    title = models.CharField(max_length=255)
-    author = models.ForeignKey(Author, on_delete=models.SET_NULL, null=True, blank=True, related_name='works')
-    series = models.ForeignKey(Series, on_delete=models.SET_NULL, null=True, blank=True, related_name='works')
-    series_number = models.IntegerField(null=True, blank=True)
-    genres = models.ManyToManyField(Genre, blank=True, related_name='works')
-    appeal_factors = models.ManyToManyField(AppealFactor, blank=True, related_name='works')
-    summary = models.TextField(blank=True)
-    original_publication_year = models.IntegerField(null=True, blank=True)
+    preferred_title = models.CharField(max_length=255)
+    original_language = models.CharField(max_length=100, null=True, blank=True)
+    uri = models.URLField(max_length=500, null=True, blank=True)
+    genres = models.ManyToManyField(Genre, blank=True)
+    appeal_factors = models.ManyToManyField(AppealFactor, blank=True)
 
     def __str__(self):
-        return self.title
+        return self.preferred_title
+
+class Expression(models.Model):
+    work = models.ForeignKey(Work, on_delete=models.SET_NULL, null=True, related_name='expressions')
+    title_on_expression = models.CharField(max_length=255)
+    language = models.CharField(max_length=100)
+    content_type = models.CharField(max_length=100, default="text")
+    
+    def __str__(self):
+        return f"{self.title_on_expression} ({self.language})"
+
+class Contribution(models.Model):
+    agent = models.ForeignKey(Agent, on_delete=models.SET_NULL, null=True)
+    work = models.ForeignKey(Work, on_delete=models.SET_NULL, null=True, blank=True)
+    expression = models.ForeignKey(Expression, on_delete=models.SET_NULL, null=True, blank=True)
+    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
+
+class Manifestation(models.Model):
+    expression = models.ForeignKey(Expression, on_delete=models.SET_NULL, null=True, related_name='manifestations')
+    isbn = models.CharField(max_length=13, unique=True, null=True, blank=True)
+    publisher = models.CharField(max_length=255, null=True, blank=True)
+    publication_year = models.IntegerField(null=True, blank=True)
+    format = models.CharField(max_length=100, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.isbn or 'No ISBN'} - {self.publisher}"
 
 class Item(models.Model):
-    FORMAT_CHOICES = [
-        ('hardcover', 'Hardcover'),
-        ('paperback', 'Paperback'),
-        ('ebook', 'E-book'),
-        ('audiobook', 'Audiobook'),
-    ]
-    work = models.ForeignKey(Work, on_delete=models.SET_NULL, null=True, blank=True, related_name='items')
-    isbn = models.CharField(max_length=13, blank=True, verbose_name="ISBN")
-    publisher = models.CharField(max_length=255, blank=True)
-    publication_year = models.IntegerField(null=True, blank=True)
-    format = models.CharField(max_length=20, choices=FORMAT_CHOICES, default='hardcover')
+    manifestation = models.ForeignKey(Manifestation, on_delete=models.SET_NULL, null=True, related_name='items')
     is_loaned = models.BooleanField(default=False)
+    condition = models.TextField(null=True, blank=True)
+    accession_date = models.DateField(auto_now_add=True)
 
     def __str__(self):
-        title = self.work.title if self.work else "Unknown Work"
-        return f"{title} ({self.publisher})"
+        return f"Item of {self.manifestation}"
