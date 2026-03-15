@@ -9,11 +9,24 @@ class Agent(models.Model):
         return self.name
 
 class Role(models.Model):
-    name = models.CharField(max_length=100)
-    uri = models.URLField(max_length=500, null=True, blank=True)
+    # Selve koden (f.eks. 'aut')
+    code = models.CharField(max_length=20) 
     
+    # Menneskelig lesbar etikett (f.eks. 'Forfatter')
+    label = models.CharField(max_length=100)
+    
+    # Angir kilden (f.eks. 'LOC', 'RDA', 'Local')
+    vocabulary = models.CharField(max_length=50, default='LOC')
+    
+    # URI for Linked Data-kompatibilitet (f.eks. http://id.loc.gov/vocabulary/relators/aut)
+    uri = models.URLField(blank=True, null=True, unique=True)
+
+    class Meta:
+        # Sikrer at kombinasjonen av kode og vokabular er unik
+        unique_together = ('code', 'vocabulary')
+
     def __str__(self):
-        return self.name
+        return f"{self.label} [{self.vocabulary}]"
 
 class Genre(models.Model):
     name = models.CharField(max_length=100)
