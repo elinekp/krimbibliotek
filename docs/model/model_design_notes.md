@@ -72,3 +72,45 @@ Lokale modelleringsregler for fase 1
 ```
 
 Databasen implementerer strukturen, mens katalogiseringsreglene definerer praksisen.
+
+## Hvorfor språk ligger på Expression
+
+Språk beskriver realiseringen av et verk, ikke selve verket.
+
+Et verk kan eksistere i flere språkversjoner, som alle representerer ulike Expressions.
+
+Eksempel:
+
+```
+Work
+ ├ Expression (eng)
+ ├ Expression (nor)
+ └ Expression (ger)
+```
+
+Derfor er språk modellert på Expression-nivå.
+
+## Hvorfor tekst og lydbok er ulike Expressions
+
+En lydbok er ikke bare en distribusjonsform av en tekst, men en egen realisering av verket.
+
+Lydboken innebærer blant annet:
+
+- innlesning
+- performativ tolkning
+- egne bidragsytere (innleser)
+
+Derfor modelleres tekst og lydbok som ulike Expressions.
+
+## Hvorfor Expression kan ha flere forekomster med samme språk
+
+Flere Expressions med samme språk og realiseringstype kan forekomme i situasjoner som:
+
+- sterkt reviderte tekster
+- forkortede versjoner
+- alternative realiseringer
+
+Datamodellen begrenser derfor ikke slike situasjoner.
+
+I stedet håndteres disse gjennom **lokale modelleringsregler.**
+
