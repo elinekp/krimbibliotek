@@ -325,15 +325,15 @@ Fordeler:
 
 ---
 
-## ADR-009
+# ADR-009
 
-### Primærnøkler implementeres som UUID
+## Primærnøkler implementeres som UUID
 
-**Context**
+### Context
 
 Systemet vil over tid integrere data fra eksterne kilder (Wikidata, Nasjonalbiblioteket, VIAF) og kan senere bli utvidet med API-er eller distribuerte datastrømmer. I slike scenarier kan tradisjonelle auto-increment-nøkler skape problemer ved datasammenslåing eller migrasjoner.
 
-**Decision**
+### Decision
 
 Alle hovedentiteter i databasen bruker **UUID som primærnøkkel**.
 
@@ -350,7 +350,7 @@ Dette gjelder blant annet:
 - SeriesMembership
 - WorkRelationship
 
-**Consequences**
+### Consequences
 
 Fordeler
 
@@ -367,15 +367,15 @@ Beslutningen anses som **arkitekturkritisk og stabil**.
 
 ---
 
-## ADR-010
+# ADR-010
 
-### Relasjonspolicy: `SET_NULL`
+## Relasjonspolicy: `SET_NULL`
 
-**Context**
+### Context
 
 Under utvikling av katalogsystemet vil entiteter kunne endres eller fjernes underveis i modellering og datavask. Aggressiv kaskadesletting kan i slike situasjoner føre til utilsiktet datatap.
 
-**Decision**
+### Decision
 
 Alle relasjoner i fase 1 bruker:
 
@@ -385,7 +385,7 @@ on_delete = SET_NULL
 
 Dette innebærer at relasjoner blir nullstilt dersom en relatert entitet slettes.
 
-**Consequences**
+### Consequences
 
 Fordeler
 
@@ -400,17 +400,17 @@ Relasjonspolicyen kan senere justeres (f.eks. til `CASCADE`) dersom praksis tils
 
 ---
 
-## ADR-011
+# ADR-011
 
-### Kardinalitet mellom Work og Expression
+## Kardinalitet mellom Work og Expression
 
-**Context**
+### Context
 
 I WEMI-modellen representerer Work den abstrakte ideen bak et verk, mens Expression representerer realiseringen av denne ideen (tekst, lyd, film osv.).
 
 I et praktisk katalogsystem må det avklares om et Work alltid må ha minst én Expression.
 
-**Decision**
+### Decision
 
 Kardinaliteten implementeres som:
 
@@ -424,7 +424,7 @@ Det betyr at:
 - et Work kan eksistere uten Expression
 - en Expression må alltid tilhøre ett Work
 
-**Consequences**
+### Consequences
 
 Fordeler
 
@@ -436,6 +436,133 @@ Ulemper
 - det kan oppstå Work-poster uten Expression dersom registrering ikke fullføres
 
 Dette anses som en **grunnleggende strukturregel i modellen**.
+
+---
+
+# ADR-012
+
+## Expression representerer realiseringstype (content type)
+
+### Context
+
+I WEMI/LRM representerer Expression hvordan et verk realiseres. Ulike realiseringer av samme verk – for eksempel tekst og lydbok – er ikke bare forskjellige utgaver, men ulike uttrykk for verket.
+
+Systemet trenger derfor et felt som beskriver **hvilken type realisering** en Expression representerer.
+
+### Decision
+
+Expression får feltet:
+
+```
+expression_type
+```
+
+Dette feltet beskriver realiseringstypen, for eksempel:
+
+```
+text
+spoken_word
+moving_image
+still_image
+```
+Dette feltet kan senere mappes til **RDA Content Type.**
+
+### Consequences
+
+Fordeler
+
+- gjør det mulig å skille tekst, lydbok og andre realiseringer
+- kompatibelt med RDA/LRM-modellen
+- gjør det mulig å knytte roller som oversetter eller innleser korrekt
+
+Ulemper
+
+- krever et kontrollert vokabular for realiseringstyper
+
+Beslutningen anses som **arkitekturkritisk.**
+
+---
+
+# ADR-013
+
+## Språk registreres på Expression
+
+### Context
+
+Oversettelser representerer nye realiseringer av et verk. Språk er derfor en egenskap ved Expression, ikke Work eller Manifestation.
+
+Systemet må derfor registrere språk på Expression-nivå.
+
+### Decision
+
+Expression får feltet:
+
+```
+language_code
+```
+
+Språk kodes etter **LOC Language Vocabulary**, som baserer seg på ISO-639-2 bibliografiske koder.
+
+Eksempler:
+
+```
+eng
+nor
+ger
+fre
+```
+
+### Consequences
+
+Fordeler
+
+- følger bibliotekfaglig praksis
+- kompatibelt med MARC og Linked Data
+- mulig å koble senere til URI-er fra id.loc.gov
+
+Ulemper
+
+- tretegnskoder i stedet for kortere ISO-639-1
+
+Beslutningen anses som **arkitekturkritisk.**
+
+---
+
+# ADR-014
+
+## Tekst og lydbok er ulike Expressions
+
+### Context
+
+Et verk kan realiseres både som tekst og som lydbok. Disse representerer ulike realiseringer av verket og kan ha ulike bidragsytere (for eksempel innleser).
+
+Det må derfor avklares om dette skal modelleres som ulike Expressions eller kun som ulike Manifestations.
+
+### Decision
+
+Tekst og lydbok modelleres som **ulike Expressions.**
+
+Eksempel:
+
+```
+Work
+ ├ Expression (eng, text)
+ └ Expression (eng, spoken_word)
+```
+
+### Consequences
+
+Fordeler
+
+- korrekt modellering av realiseringstype
+- gjør det mulig å knytte innleser til riktig nivå
+- kompatibelt med RDA Content Type
+
+Ulemper
+
+- flere Expressions per Work
+
+Beslutningen anses som **strukturkritisk.**
 
 ---
 
