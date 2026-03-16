@@ -325,6 +325,120 @@ Fordeler:
 
 ---
 
+## ADR-009
+
+### Primærnøkler implementeres som UUID
+
+**Context**
+
+Systemet vil over tid integrere data fra eksterne kilder (Wikidata, Nasjonalbiblioteket, VIAF) og kan senere bli utvidet med API-er eller distribuerte datastrømmer. I slike scenarier kan tradisjonelle auto-increment-nøkler skape problemer ved datasammenslåing eller migrasjoner.
+
+**Decision**
+
+Alle hovedentiteter i databasen bruker **UUID som primærnøkkel**.
+
+Dette gjelder blant annet:
+
+- Work
+- Expression
+- Manifestation
+- Item
+- Agent
+- Character
+- Series
+- Contribution
+- SeriesMembership
+- WorkRelationship
+
+**Consequences**
+
+Fordeler
+
+- robust ved import og sammenslåing av data
+- stabil identitet uavhengig av database
+- kompatibelt med Linked Data-tenkning og URI-baserte identifikatorer
+
+Ulemper
+
+- mindre lesbare nøkler for mennesker
+- noe større indekser
+
+Beslutningen anses som **arkitekturkritisk og stabil**.
+
+---
+
+## ADR-010
+
+### Relasjonspolicy: `SET_NULL`
+
+**Context**
+
+Under utvikling av katalogsystemet vil entiteter kunne endres eller fjernes underveis i modellering og datavask. Aggressiv kaskadesletting kan i slike situasjoner føre til utilsiktet datatap.
+
+**Decision**
+
+Alle relasjoner i fase 1 bruker:
+
+```
+on_delete = SET_NULL
+```
+
+Dette innebærer at relasjoner blir nullstilt dersom en relatert entitet slettes.
+
+**Consequences**
+
+Fordeler
+
+- beskytter mot utilsiktet sletting av store datamengder
+- tryggere under modellutvikling og datarensing
+
+Ulemper
+
+- kan etterlate null-relasjoner som må ryddes manuelt
+
+Relasjonspolicyen kan senere justeres (f.eks. til `CASCADE`) dersom praksis tilsier det.
+
+---
+
+## ADR-011
+
+### Kardinalitet mellom Work og Expression
+
+**Context**
+
+I WEMI-modellen representerer Work den abstrakte ideen bak et verk, mens Expression representerer realiseringen av denne ideen (tekst, lyd, film osv.).
+
+I et praktisk katalogsystem må det avklares om et Work alltid må ha minst én Expression.
+
+**Decision**
+
+Kardinaliteten implementeres som:
+
+```
+Work → 0..n Expression
+Expression → 1 Work
+```
+
+Det betyr at:
+
+- et Work kan eksistere uten Expression
+- en Expression må alltid tilhøre ett Work
+
+**Consequences**
+
+Fordeler
+
+- støtter konseptuelle verk som registreres før konkrete realiseringer
+- samsvarer med LRM-modellen
+
+Ulemper
+
+- det kan oppstå Work-poster uten Expression dersom registrering ikke fullføres
+
+Dette anses som en **grunnleggende strukturregel i modellen**.
+
+---
+
 # Fremtidige ADR-temaer
 
 Følgende temaer vil sannsynligvis kreve nye ADR-beslutninger senere:
