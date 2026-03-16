@@ -210,6 +210,36 @@ Datamodellen skal kunne håndtere:
 
 ---
 
+# 13.Expression må alltid tilhøre ett Work
+
+´´´
+Expression → 1 Work
+´´´
+
+Et Work kan eksistere uten Expression, men en Expression kan ikke eksistere uten et Work.
+
+# 14. Manifestation må alltid tilhøre en Expression
+
+´´´
+Manifestation → 1 Expression
+´´´
+
+Dette sikrer at alle publiserte utgaver kan spores tilbake til en bestemt realisering av verket.
+
+# 15. Språk registreres på Expression
+
+Språk registreres på Expression-nivå fordi oversettelser representerer nye realiseringer av et verk.
+
+# 16. Realiseringstype registreres på Expression
+
+Expression inneholder feltet expression_type, som beskriver realiseringstypen (for eksempel tekst eller lydbok).
+
+# 17.Tekst og lydbok er ulike Expressions
+
+Tekst og lydbok modelleres som separate Expressions, fordi de representerer ulike realiseringer av et verk.
+
+---
+
 ## Bruk av dette dokumentet
 
 Dette dokumentet fungerer som en **referanse for utvikling og migrasjoner**.
