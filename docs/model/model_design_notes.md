@@ -114,3 +114,48 @@ Datamodellen begrenser derfor ikke slike situasjoner.
 
 I stedet håndteres disse gjennom **lokale modelleringsregler.**
 
+## Hvorfor Manifestation representerer bibliografisk identitet på utgavenivå
+
+`Manifestation` brukes til å modellere den konkrete publiserte utgaven av en `Expression`.
+
+Dette nivået brukes til å skille mellom ulike utgaver og publiseringsformer av samme realisering, for eksempel:
+
+- hardcover
+- paperback
+- epub
+- pdf
+
+Disse forskjellene representerer ikke nye `Expressions`, men nye `Manifestations`.
+
+Dette gjør skillet mellom `Expression` og `Manifestation` tydelig:
+
+- `Expression` = hvordan verket er realisert
+- `Manifestation` = hvordan denne realiseringen er publisert
+
+## Hvorfor ISBN ligger på Manifestation
+
+ISBN identifiserer en konkret utgave og hører derfor til `Manifestation`-nivået.
+
+ISBN identifiserer ikke verket som abstrakt idé og heller ikke realiseringen som sådan.
+
+## Hvorfor NB-identifikatoren lagres som nb_sesamid
+
+I fase 1 lagres Nasjonalbibliotekets identifikator som `nb_sesamid`.
+
+Dette er valgt for å være presis om hvilken NB-identifikator feltet faktisk representerer, og for å unngå uklarhet rundt et mer generelt `nb_id`.
+
+Siden denne identifikatoren peker til en konkret bibliografisk post eller utgave, hører den til `Manifestation`-nivået.
+
+## Hvorfor forlag modelleres via Contribution / Agent fra start
+
+Forlag hører til `Manifestation`-nivået fordi forlag er knyttet til den konkrete utgaven, ikke til `Work` eller `Expression`.
+
+Prosjektet velger å modellere forlag via `Contribution / Agent` allerede i fase 1, i stedet for å bruke et enkelt tekstfelt.
+
+Dette gir:
+
+- mer konsekvent rollemodell
+- bedre autoritetskontroll
+- mindre oppryddingsarbeid senere
+
+Ulempen er høyere registreringsfriksjon i fase 1, men dette er vurdert som akseptabelt for å beskytte modellen strukturelt.
