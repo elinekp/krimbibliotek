@@ -250,6 +250,31 @@ Datamodellen skal kunne håndtere:
 
 ---
 
+# 20. Item representerer eksemplarnivå, ikke bibliografisk utgavenivå
+
+`Item` representerer det individuelle fysiske eksemplaret i samlingen.
+
+`Item` skal derfor brukes til eksemplarspesifikke data, ikke til bibliografiske data som beskriver utgaven som publikasjon.
+
+Eksempler på data som hører til `Item`:
+
+- hylleplassering
+- proveniens
+- lokale eksemplarnotater
+
+Eksempler på data som ikke hører til `Item`:
+
+- ISBN
+- `nb_sesamid`
+- utgivelsesår
+- annen utgaveinformasjon
+
+Slike data hører til `Manifestation`.
+
+Dette skillet skal ikke brytes av applikasjonslogikk, skjemaer eller senere feltutvidelser.
+
+---
+
 ## Bruk av dette dokumentet
 
 Dette dokumentet fungerer som en referanse for utvikling og migrasjoner.
