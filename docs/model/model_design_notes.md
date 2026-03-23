@@ -159,3 +159,63 @@ Dette gir:
 - mindre oppryddingsarbeid senere
 
 Ulempen er høyere registreringsfriksjon i fase 1, men dette er vurdert som akseptabelt for å beskytte modellen strukturelt.
+
+## Hvorfor Item holdes på eksemplarnivå
+
+`Item` representerer det individuelle fysiske eksemplaret i samlingen.
+
+I fase 1 holdes `Item` bevisst på rent eksemplarnivå. Det betyr at `Item` brukes til data som gjelder det konkrete eksemplaret, ikke til bibliografiske data om utgaven.
+
+Eksempler på data som hører til `Item`:
+
+- hylleplassering
+- proveniens
+- lokale eksemplarnotater
+- senere eventuelt tilstand og utlånsrelaterte opplysninger
+
+Eksempler på data som ikke hører til `Item`:
+
+- ISBN
+- `nb_sesamid`
+- utgivelsesår
+- utgaveinformasjon som beskriver selve publikasjonen
+
+Slike data hører til `Manifestation`, fordi de beskriver den bibliografiske identiteten på utgavenivå.
+
+Dette skillet er viktig for å unngå at samme type informasjon registreres både på `Manifestation` og `Item`, noe som ville gi overlapp, inkonsistens og dyr opprydding senere.
+
+## Hvorfor proveniens i fase 1 håndteres enkelt
+
+Proveniens beskriver et eksemplars eier- og historieforløp.
+
+Dette kan for eksempel omfatte:
+
+- tidligere eiere
+- gaveopplysninger
+- samlingstilknytning
+- ex libris
+- dedikasjoner
+- stempler eller andre spor på eksemplaret
+
+I fase 1 håndteres proveniens normalt gjennom feltet:
+
+- `provenance_notes`
+
+Dette er valgt for å holde registreringen enkel i første fase.
+
+Samtidig åpner modellen for at `Contribution` også kan kobles til `Item` når proveniens eller eierskap er viktig nok til å struktureres, for eksempel ved navngitte tidligere eiere eller givere.
+
+Valget i fase 1 er derfor:
+
+- enkel proveniens registreres som fritekst
+- strukturert proveniens brukes bare når det gir tydelig merverdi
+
+## Hvorfor `is_first_edition` ikke brukes på Item
+
+Et eget felt som `is_first_edition` brukes ikke på `Item`.
+
+Om et eksemplar tilhører første utgave, fremgår dette gjennom vanlig utgaveinformasjon på `Manifestation`-nivå.
+
+Prosjektet legger derfor ikke inn et eget boolsk felt for dette, verken på `Item` eller som særskilt behov i fase 1.
+
+Dersom prosjektet senere ønsker å registrere copy-specific bibliografiske særtrekk på eksemplarnivå, må dette vurderes som en egen problemstilling og modelleres med mer presis semantikk enn `is_first_edition`.
