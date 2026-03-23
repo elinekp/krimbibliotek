@@ -620,6 +620,68 @@ Beslutningen anses som arkitekturkritisk og stabil.
 
 ---
 
+# ADR-016
+
+## Item holdes på rent eksemplarnivå
+
+### Context
+
+Prosjektet måtte avklare hva `Item` konkret skal representere i modellen, og hvilke typer data som hører hjemme der.
+
+Det var særlig behov for å skille tydelig mellom:
+
+- bibliografiske data som beskriver en publisert utgave
+- eksemplarspesifikke data som gjelder ett fysisk objekt i samlingen
+
+Det måtte også avklares hvordan proveniens skulle håndteres i fase 1, og om et felt som `is_first_edition` skulle brukes på `Item`.
+
+### Decision
+
+`Item` holdes på rent eksemplarnivå.
+
+Dette innebærer at `Item` brukes til data som gjelder det konkrete fysiske eksemplaret, for eksempel:
+
+- `shelf_location`
+- `provenance_notes`
+- andre lokale eksemplarnotater
+
+Bibliografiske utgavedata skal ikke ligge på `Item`.
+
+Eksempler på data som ikke hører til `Item`:
+
+- ISBN
+- `nb_sesamid`
+- utgivelsesår
+- utgaveinformasjon
+
+Slike data hører til `Manifestation`.
+
+I fase 1 håndteres proveniens normalt gjennom:
+
+- `provenance_notes`
+
+Samtidig kan `Contribution` brukes på `Item` når proveniens eller eierskap er viktig nok til å struktureres.
+
+Feltet `is_first_edition` brukes ikke på `Item`.
+
+Prosjektet innfører heller ikke et eget boolsk felt for dette på `Manifestation`, siden vanlig utgaveinformasjon anses som tilstrekkelig.
+
+### Consequences
+
+Fordeler
+
+- tydelig skille mellom bibliografisk nivå og eksemplarnivå
+- mindre risiko for dobbeltføring og inkonsistens
+- enklere fase-1-modell
+- mulig å utvide senere med mer strukturert proveniens uten å bryte grunnmodellen
+
+Ulemper
+
+- mindre strukturert proveniens i første fase
+- enkelte copy-specific bibliografiske særtrekk må eventuelt håndteres senere
+
+---
+
 # Fremtidige ADR-temaer
 
 Følgende temaer vil sannsynligvis kreve nye ADR-beslutninger senere:
