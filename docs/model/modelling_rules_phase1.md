@@ -173,3 +173,67 @@ Eksempler:
 Databasen avgjør ikke automatisk hva som er nytt `Work` versus ny `Expression`.
 
 Ved tvilstilfeller skal vurderingen dokumenteres og følge disse modelleringsreglene, ikke løses gjennom ad hoc-praksis.
+
+---
+
+## 6. Item
+
+### Item som eksemplarnivå
+
+`Item` representerer det individuelle fysiske eksemplaret i samlingen.
+
+I fase 1 brukes `Item` kun til data som gjelder det konkrete eksemplaret, ikke bibliografiske data om utgaven.
+
+Eksempler på data som hører til `Item`:
+
+- `shelf_location`
+- `provenance_notes`
+- lokale eksemplarnotater
+
+Eksempler på data som **ikke** hører til `Item`:
+
+- ISBN
+- `nb_sesamid`
+- utgivelsesår
+- annen bibliografisk utgaveinformasjon
+
+Slike data hører til `Manifestation`.
+
+### Proveniens
+
+Proveniens brukes om et eksemplars eier- og historieforløp.
+
+Dette kan for eksempel omfatte:
+
+- tidligere eiere
+- gaveopplysninger
+- samlingstilknytning
+- ex libris
+- dedikasjoner
+- stempler eller andre spor på eksemplaret
+
+I fase 1 registreres proveniens normalt i:
+
+- `provenance_notes`
+
+### Når Contribution kan brukes på Item
+
+`Contribution` kan også brukes på `Item` når proveniens eller eierskap er viktig nok til å struktureres.
+
+Dette kan være aktuelt når:
+
+- tidligere eier er kjent og har tydelig verdi for gjenfinning
+- giver bør registreres som navngitt aktør
+- samlingshistorikk bør kunne kobles strukturert til agent
+
+I enkle tilfeller er `provenance_notes` tilstrekkelig.
+
+I fase 1 er det akseptabelt å bruke fritekst som hovedpraksis.
+
+### Førsteutgave
+
+`is_first_edition` brukes ikke på `Item`.
+
+Om et eksemplar tilhører første utgave, fremgår dette gjennom vanlig utgaveinformasjon på `Manifestation`-nivå, ikke som eget boolsk felt på `Item`.
+
+Eventuelle copy-specific bibliografiske særtrekk vurderes senere og modelleres ikke særskilt i fase 1.
