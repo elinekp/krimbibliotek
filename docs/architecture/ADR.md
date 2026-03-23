@@ -246,7 +246,7 @@ Eksempler:
 * wikidata_id
 * viaf_id
 * isbn
-* nb_id
+* nb_sesamid
 
 ### Consequences
 
@@ -563,6 +563,65 @@ Ulemper
 - flere Expressions per Work
 
 Beslutningen anses som **strukturkritisk.**
+
+---
+
+# ADR-015
+
+## Manifestation representerer bibliografisk identitet på utgavenivå
+
+### Context
+
+Det måtte avklares hva Manifestation konkret representerer i modellen, og hvilke typer forskjeller som skal føre til ny Manifestation.
+
+I prosjektet er det viktig å skille tydelig mellom:
+
+- Expression som realisering av et verk
+- Manifestation som den konkrete publiserte utgaven
+
+Det måtte også avklares hvor identifikatorer som ISBN og NB-identifikator skal ligge, og hvordan forlag skal modelleres.
+
+### Decision
+
+Manifestation representerer **bibliografisk identitet på utgavenivå**.
+
+Dette innebærer at følgende modelleres som ulike Manifestations av samme Expression:
+
+- hardcover
+- paperback
+- epub
+- pdf
+
+Følgende felter plasseres på Manifestation-nivå i fase 1:
+
+- `isbn`
+- `nb_sesamid`
+- `publication_year`
+
+Forlag hører til Manifestation-nivået og modelleres fra start via:
+
+```
+text
+Contribution / Agent
+```
+
+Carrier/media type forstås prinsipielt som et Manifestation-attributt, men konkret felt for dette utsettes til senere fase.
+
+### Consequences
+
+Fordeler
+
+- tydelig skille mellom Expression og Manifestation
+- korrekt modellering av konkrete utgaver
+- ISBN og NB-identifikator plasseres på riktig nivå
+- konsekvent rollemodell ved at forlag håndteres via Contribution / Agent
+
+Ulemper
+
+- høyere registreringsfriksjon i fase 1 enn ved rene tekstfelt
+- enkelte praktiske utgivelsesattributter må komme senere
+
+Beslutningen anses som arkitekturkritisk og stabil.
 
 ---
 
