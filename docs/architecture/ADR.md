@@ -598,12 +598,7 @@ Følgende felter plasseres på Manifestation-nivå i fase 1:
 - `nb_sesamid`
 - `publication_year`
 
-Forlag hører til Manifestation-nivået og modelleres fra start via:
-
-```
-text
-Contribution / Agent
-```
+Forlag hører til `Manifestation`-nivået og modelleres fra start via `Contribution / Agent`.
 
 Carrier/media type forstås prinsipielt som et Manifestation-attributt, men konkret felt for dette utsettes til senere fase.
 
