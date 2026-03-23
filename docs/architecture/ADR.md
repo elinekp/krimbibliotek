@@ -705,10 +705,11 @@ Neste naturlige steg i arbeidet vårt vil være:
 1. Work
 2. Expression
 3. Manifestation
-4. Series
-5. Agent
-6. Contribution
-7. Character
-8. Genre / AppealFactor
+4. Item
+5. Series
+6. Agent
+7. Contribution
+8. Character
+9. Genre / AppealFactor
 
 
