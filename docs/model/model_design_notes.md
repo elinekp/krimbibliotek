@@ -219,3 +219,144 @@ Om et eksemplar tilhører første utgave, fremgår dette gjennom vanlig utgavein
 Prosjektet legger derfor ikke inn et eget boolsk felt for dette, verken på `Item` eller som særskilt behov i fase 1.
 
 Dersom prosjektet senere ønsker å registrere copy-specific bibliografiske særtrekk på eksemplarnivå, må dette vurderes som en egen problemstilling og modelleres med mer presis semantikk enn `is_first_edition`.
+
+# Hvorfor serier modelleres som egne entiteter
+
+Dette notatet dokumenterer begrunnelsene bak hvordan `Series` og `SeriesMembership` er modellert i fase 1 av prosjektet.
+
+## Hvorfor Series er en egen entitet
+
+Serier representerer ikke bare en tekststreng, men en gjenbrukbar og navigerbar struktur i modellen.
+
+Ved å modellere `Series` som egen entitet blir det mulig å:
+
+- gjenbruke samme serie på tvers av flere verk eller utgaver
+- skille tydelig mellom selve serien og det enkelte medlemskapet
+- støtte flere serietyper uten å miste struktur
+- bygge navigasjon og filtrering på serie senere
+
+Dette er viktig fordi prosjektet allerede skal støtte minst to ulike seriekonsepter:
+
+- narrative serier
+- forlagsserier
+
+## Hvorfor series_type er obligatorisk
+
+Samme tabell brukes i fase 1 til både narrative serier og forlagsserier.
+
+For å unngå uklar semantikk må hver `Series`-post derfor ha en eksplisitt type.
+
+I fase 1 brukes et lite og lukket vokabular:
+
+- `narrative`
+- `publisher_series`
+
+Dette gir en stram modell med lav risiko for lokal variasjon i verdier, og gjør det enklere å validere data og bygge spørringer senere.
+
+Andre serietyper utsettes til senere fase.
+
+## Hvorfor SeriesMembership er en egen koblingsentitet
+
+Serietilknytning er ikke bare en enkel mange-til-mange-relasjon.
+
+Et medlemskap i en serie kan også ha egne egenskaper, særlig:
+
+- rekkefølge
+- nummerering for visning
+- eventuell fremtidig kontekst
+
+Derfor modelleres serietilknytning gjennom en egen entitet:
+
+`SeriesMembership`
+
+Dette gjør det mulig å holde selve serien adskilt fra opplysninger som gjelder ett bestemt medlemskap.
+
+## Hvorfor serier kan ligge på ulike nivåer i modellen
+
+Prosjektet har skilt mellom to hovedtyper serie i fase 1:
+
+- narrative serier
+- forlagsserier
+
+Disse hører ikke til samme nivå i WEMI-strukturen.
+
+Narrative serier beskriver verkets fortellingsmessige tilknytning og hører derfor til `Work`.
+
+Forlagsserier beskriver en konkret utgave- eller publiseringskontekst og hører derfor til `Manifestation`.
+
+Dette gjør det mulig at samme bok kan ha:
+
+- en narrativ serie på `Work`
+- en forlagsserie på `Manifestation`
+
+uten at disse blandes sammen.
+
+## Hvorfor én rad i SeriesMembership peker til enten Work eller Manifestation
+
+Én rad i `SeriesMembership` representerer én konkret serietilknytning.
+
+For å holde modellen entydig skal en medlemskapsrad derfor peke til:
+
+- enten `Work`
+- eller `Manifestation`
+
+Aldri begge samtidig.
+
+Hvis én rad kunne peke til begge nivåer, ville det bli uklart hva medlemskapet faktisk beskriver.
+
+Derfor er modellen strammet slik at hver rad uttrykker én type tilknytning.
+
+## Hvorfor duplikatmedlemskap ikke tillates
+
+Samme serie skal ikke kunne registreres flere ganger mot samme mål.
+
+Det betyr at prosjektet beskytter mot:
+
+- samme `Series` koblet flere ganger til samme `Work`
+- samme `Series` koblet flere ganger til samme `Manifestation`
+
+Dette er valgt fordi slike duplikater normalt ikke uttrykker ny informasjon, men heller registreringsfeil eller inkonsistent praksis.
+
+Derfor håndheves dette som databasekrav, ikke bare som anbefalt praksis.
+
+## Hvorfor part_number og part_display ligger på medlemskapet
+
+Nummerering er ikke en egenskap ved serien som abstrakt entitet, men ved forholdet mellom serien og et bestemt verk eller en bestemt manifestasjon.
+
+Derfor ligger:
+
+- `part_number`
+- `part_display`
+
+på `SeriesMembership`, ikke på `Series`.
+
+Dette gjør det mulig at samme serie kan brukes mot mange mål med ulik eller manglende nummerering.
+
+## Hvorfor nummerering er valgfri i fase 1
+
+Ikke alle serietilknytninger har kjent, stabil eller normaliserbar nummerering.
+
+Modellen må derfor tåle:
+
+- serietilknytning uten nummer
+- nummerering bare som visningsstreng
+- ulik verdi for sortering og visning
+
+Derfor er både `part_number` og `part_display` valgfrie i fase 1.
+
+Dette gir nok fleksibilitet uten å utvide modellen unødvendig.
+
+## Hvorfor flere serieutvidelser utsettes
+
+Fase 1 holder seriemodellen bevisst stram.
+
+Følgende er utsatt:
+
+- `context_note`
+- variantnavn på `Series`
+- seriehierarki som `parent_series`
+- flere `series_type`-verdier enn de to grunnleggende
+
+Dette er nyttige utvidelser, men ikke nødvendige for å beskytte grunnstrukturen nå.
+
+Målet i fase 1 er å få på plass en liten, tydelig og stabil seriemodell som kan utvides senere uten ombygging av kjernen.
