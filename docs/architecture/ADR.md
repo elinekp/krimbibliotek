@@ -762,6 +762,65 @@ Ulemper
 
 ---
 
+# ADR-018
+
+## Character strammes i fase 1
+
+### Context
+
+Prosjektet hadde allerede besluttet at karakterer skal modelleres som egne entiteter, fordi kriminallitteratur ofte er sterkt karakterdrevet og fordi karakterbasert navigasjon er en viktig formidlingsmulighet.
+
+Etter tabellgjennomgangen var det nødvendig å presisere flere spørsmål:
+
+- hvilket nivå karakterer skal kobles til
+- om koblingen skal gå via egen koblingstabell
+- hvilke felter `Character` faktisk skal ha i fase 1
+- om samme karakter kan kobles flere ganger til samme verk
+
+Dette måtte avklares nå for å beskytte modellen mot uklar praksis og unødvendig kompleksitet senere.
+
+### Decision
+
+`Character` beholdes som egen entitet.
+
+Karakterer kobles til `Work`-nivået.
+
+Koblingen mellom verk og karakter modelleres gjennom en egen koblingstabell:
+
+```
+text
+WorkCharacter
+```
+I fase 1 får Character følgende felter:
+
+- `id`
+- `name`
+
+Følgende regler fryses som strukturkrav:
+
+- Character er egen entitet
+- karakterer kobles til Work, ikke til Expression, Manifestation eller Item
+- koblingen går via egen koblingstabell
+- samme karakter kan ikke kobles flere ganger til samme Work
+- variantnavn utsettes til senere fase
+- karakterroller som hovedkarakter / bikarakter utsettes til senere fase
+
+### Consequences
+
+Fordeler
+
+- tydelig plassering av karakterer på riktig nivå i modellen
+- støtte for gjenbruk av samme karakter på tvers av flere verk
+- støtte for navigasjon og søk på karakter
+- stram og enkel fase-1-modell
+
+Ulemper
+
+- navnevariasjoner må håndteres gjennom registreringspraksis i første fase
+- mer avansert karaktermodell må komme senere dersom behovet oppstår
+
+---
+
 # Fremtidige ADR-temaer
 
 Følgende temaer vil sannsynligvis kreve nye ADR-beslutninger senere:
