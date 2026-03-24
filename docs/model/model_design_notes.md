@@ -1,3 +1,13 @@
+# Om stabile koder og linked-data-beredskap
+
+Prosjektet legger i fase 1 til rette for linked data ved å bruke stabile lokale koder for kontrollerte semantiske kategorier.
+
+Dette gjelder blant annet typer, relasjoner, roller og andre kontrollerte vokabularverdier.
+
+Poenget er ikke å lagre alle eksterne URI-er direkte i operative tabeller fra start, men å sikre at lokale koder kan mappes entydig til relevante autoritetsregistre og vokabularer senere.
+
+Dette beskytter modellen mot fritekstdrift og gjør senere interoperabilitet enklere.
+
 # Work-nivået i modellen
 
 Dette notatet dokumenterer begrunnelsene bak hvordan Work er modellert i fase 1 av prosjektet.
@@ -548,3 +558,72 @@ Dette er valgt fordi det:
 - gjør det enklere å utvide tabellen senere uten å måtte endre primærnøkkelstrategi
 
 Dette gir litt mer formell struktur, men passer godt med prosjektets overordnede modellvalg.
+
+# Hvorfor WorkRelationship modelleres som egen koblingstabell
+
+Dette notatet dokumenterer begrunnelsene bak hvordan `WorkRelationship` er modellert i fase 1 av prosjektet.
+
+## Hvorfor WorkRelationship er en egen tabell
+
+Relasjoner mellom verk er ikke bare en skjult mange-til-mange-kobling.
+
+Prosjektet må kunne bevare relasjonstypen som eksplisitt data.
+
+Derfor modelleres verkrelasjoner gjennom en egen entitet:
+
+`WorkRelationship`
+
+Dette er i tråd med prosjektets generelle modellprinsipp om å synliggjøre viktige koblinger når de har egen semantikk.
+
+## Hvorfor WorkRelationship bare kobler Work til Work
+
+`WorkRelationship` beskriver intellektuelle relasjoner mellom verk.
+
+Derfor skal koblingen ligge på `Work`-nivå, ikke på:
+
+- `Expression`
+- `Manifestation`
+- `Item`
+
+Dette beskytter skillet mellom verkrelasjoner og bibliografisk sammenstilling.
+
+## Hvorfor relasjonen er retningsbestemt
+
+Mange verkrelasjoner er ikke symmetriske.
+
+Eksempler:
+
+- basert på
+- inspirert av
+- videreføring av
+
+Derfor må relasjonen uttrykkes som en rettet kobling mellom:
+
+- `source_work`
+- `target_work`
+
+## Hvorfor relation_type er obligatorisk
+
+Uten `relation_type` ville tabellen bare uttrykke at to verk henger sammen, uten å si hvordan.
+
+Det ville gjøre modellen semantisk svak og mindre nyttig både for katalogisering og formidling.
+
+I fase 1 er `relation_type` derfor obligatorisk.
+
+## Hvorfor relation_type er en stabil kode
+
+`relation_type` skal ikke være fritekst.
+
+I fase 1 brukes en stabil lokal kode som kan mappes entydig til relevant relasjonsvokabular, normalt `RDA Registry`.
+
+Dette gjør modellen bedre egnet for linked data senere, uten å tvinge eksterne URI-er inn i selve arbeidstabellen fra start.
+
+## Hvorfor duplikater og selvrelasjoner ikke tillates
+
+Samme relasjon skal ikke registreres flere ganger mellom samme to verk med samme relasjonstype.
+
+Derfor håndheves unikhet for:
+
+- (`source_work`, `target_work`, `relation_type`)
+
+I tillegg skal et verk ikke kunne stå i relasjon til seg selv i samme rad.
