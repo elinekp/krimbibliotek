@@ -275,6 +275,78 @@ Dette skillet skal ikke brytes av applikasjonslogikk, skjemaer eller senere felt
 
 ---
 
+# 21. Series bruker et kontrollert seriebegrep i fase 1
+
+`Series` representerer en serie som egen entitet, ikke bare et tekstfelt.
+
+I fase 1 skal `Series` ha et obligatorisk felt:
+
+- `series_type`
+
+Dette feltet bruker et stramt kontrollert vokabular:
+
+- `narrative`
+- `publisher_series`
+
+Dette beskytter skillet mellom:
+
+- narrative serier på `Work`-nivå
+- forlagsserier på `Manifestation`-nivå
+
+Andre serietyper og seriehierarki er utsatt til senere fase.
+
+---
+
+# 22. SeriesMembership må peke til enten Work eller Manifestation
+
+`SeriesMembership` representerer en konkret serietilknytning.
+
+Hver rad i `SeriesMembership` skal peke til:
+
+- enten `Work`
+- eller `Manifestation`
+
+Aldri begge samtidig, og aldri ingen av dem.
+
+Dette innebærer at modellen må håndheve:
+
+- `work` satt og `manifestation` tom
+- eller `manifestation` satt og `work` tom
+
+Denne regelen skal ikke kunne brytes av applikasjonslogikk, skjemaer eller importer.
+
+---
+
+# 23. Samme serie kan ikke registreres dobbelt mot samme mål
+
+`SeriesMembership` skal være unikt per:
+
+- (`series`, `work`)
+- (`series`, `manifestation`)
+
+Det betyr at samme serie ikke kan kobles flere ganger til samme `Work`, og heller ikke flere ganger til samme `Manifestation`.
+
+Dette er en databasebeskyttet modellregel, ikke bare en anbefalt praksis.
+
+---
+
+# 24. Nummerering i SeriesMembership er valgfri
+
+`SeriesMembership` kan eksistere uten kjent eller normalisert nummerering.
+
+Derfor er:
+
+- `part_number` valgfritt
+- `part_display` valgfritt
+
+Modellen skal tåle:
+
+- serietilknytning uten nummer
+- nummerering som ikke er rent numerisk
+- ulik verdi for sortering og visning
+
+---
+
 ## Bruk av dette dokumentet
 
 Dette dokumentet fungerer som en referanse for utvikling og migrasjoner.
