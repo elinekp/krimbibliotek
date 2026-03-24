@@ -129,6 +129,8 @@ Contribution kan kobles til:
 * Manifestation
 * Item
 
+Roller skal representeres med stabile lokale koder med entydig mapping til relevante rollevokabular.
+
 ### Consequences
 
 Fordeler:
@@ -460,12 +462,11 @@ expression_type
 Dette feltet beskriver realiseringstypen, for eksempel:
 
 ```
-text
 spoken_word
 moving_image
 still_image
 ```
-Dette feltet kan senere mappes til **RDA Content Type.**
+Dette feltet representeres i fase 1 som en stabil lokal kode som skal kunne mappes entydig til **RDA Content Type.**
 
 ### Consequences
 
@@ -846,7 +847,6 @@ Dette måtte avklares nå for å beskytte modellen mot uklar relasjonspraksis og
 Koblingen mellom `Work` og `Character` modelleres gjennom en eksplisitt koblingstabell:
 
 ```
-text
 WorkCharacter
 ```
 
@@ -882,6 +882,125 @@ Ulemper
 - én ekstra tabell i modellen
 - relasjonen kan oppleves mer formell enn en ren skjult M2M-kobling
 - fremtidige behov som karakterrolle må fortsatt komme som senere utvidelser
+
+---
+
+# ADR-020
+
+## WorkRelationship fryses som eksplisitt koblingstabell i fase 1
+
+### Context
+
+Prosjektet har allerede besluttet at intellektuelle relasjoner mellom verk skal modelleres eksplisitt gjennom `WorkRelationship`.
+
+Etter tabellgjennomgangen var det nødvendig å presisere:
+
+- at `WorkRelationship` bare skal koble `Work` til `Work`
+- at relasjonen skal være retningsbestemt
+- at relasjonstype skal være obligatorisk
+- at duplikater og selvrelasjoner ikke skal tillates
+- hvilke felter tabellen faktisk skal ha i fase 1
+- hva som skal håndheves i databasen versus i modelleringsregler
+
+Dette måtte avklares nå for å beskytte modellen mot uklar relasjonspraksis og for å holde verkrelasjoner tydelig adskilt fra bibliografisk sammenstilling i `ExpressionManifestation`.
+
+### Decision
+
+`WorkRelationship` beholdes som en eksplisitt koblingstabell i modellen.
+
+Tabellen kobler bare:
+
+- `source_work`
+- `target_work`
+
+Begge peker til `Work`.
+
+Relasjonen er retningsbestemt.
+
+I fase 1 får `WorkRelationship` følgende felter:
+
+- `id`
+- `source_work`
+- `target_work`
+- `relation_type`
+
+Følgende regler fryses som strukturkrav:
+
+- `WorkRelationship` kobler bare `Work` til `Work`
+- `relation_type` er obligatorisk
+- `relation_type` er en kontrollert kode
+- samme kombinasjon av (`source_work`, `target_work`, `relation_type`) kan ikke registreres flere ganger
+- `source_work` og `target_work` kan ikke være samme verk
+- note, kilde, usikkerhet og annen relasjonsmetadata utsettes
+
+Semantikken for relasjonstyper, inkludert valg av relasjonstyper og håndtering av inverse former, styres av modelleringsregler og ikke av databasen alene.
+
+### Consequences
+
+Fordeler
+
+- tydelig og eksplisitt modellering av verkrelasjoner
+- mulig å bevare relasjonstype som data
+- retningsbestemt modell som tåler ikke-symmetriske relasjoner
+- enkel håndheving av dataintegritet gjennom databasekrav
+- godt grunnlag for senere utvidelser uten ombygging av kjernen
+
+Ulemper
+
+- én ekstra koblingstabell i modellen
+- krever tydelige modelleringsregler for relasjonstyper
+- mer avansert relasjonslogikk må komme senere dersom behovet oppstår
+
+---
+
+# ADR-021
+
+## Kontrollerte semantiske kategorier representeres med stabile lokale koder i fase 1
+
+### Context
+
+Prosjektet ønsker å legge til rette for linked data og fremtidig entydig kobling til relevante autoritetsregistre og vokabularer.
+
+Dette gjelder ikke bare eksterne identifikatorer på entiteter, men også kontrollerte semantiske kategorier i modellen, som:
+
+- typer
+- relasjoner
+- roller
+- andre kontrollerte vokabularverdier
+
+Uten stabile koder vil semantikken bli bundet til lokale etiketter eller fritekst, noe som gjør senere mapping, validering og interoperabilitet vanskeligere.
+
+### Decision
+
+I fase 1 skal kontrollerte typer, relasjoner, roller og andre semantiske kategorier representeres med stabile lokale koder.
+
+Slike koder skal kunne mappes entydig til relevante eksterne autoritetsregistre eller vokabularer der dette er faglig relevant.
+
+Eksempler på slike registre og vokabularer kan være:
+
+- Wikidata
+- RDA Registry / RDA Vocabularies
+- LoC Language Vocabulary
+- LoC relator codes
+
+I fase 1 lagres normalt ikke eksterne URI-er direkte i alle operative tabeller.
+
+I stedet brukes stabile lokale koder med entydig mapping i regel- eller vokabularlaget.
+
+### Consequences
+
+Fordeler
+
+- bedre linked-data-beredskap
+- mindre risiko for fritekstdrift og lokal variasjon
+- tydeligere semantikk i modellen
+- enklere senere eksport, mapping og interoperabilitet
+
+Ulemper
+
+- krever strengere vokabularforvaltning
+- krever at lokale koder holdes stabile over tid
+- noe mer dokumentasjonsarbeid i fase 1
 
 ---
 
