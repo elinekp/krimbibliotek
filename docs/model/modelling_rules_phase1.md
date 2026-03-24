@@ -6,6 +6,26 @@ Målet er å sikre konsistent registreringspraksis innenfor den valgte datamodel
 
 ---
 
+## Overordnet prinsipp for kontrollerte koder
+
+I fase 1 skal kontrollerte typer, relasjoner, roller og andre semantiske kategorier registreres med stabile lokale koder.
+
+Kodene skal kunne mappes entydig til relevante autoritetsregistre eller vokabularer der dette er faglig relevant.
+
+Dette gjelder blant annet:
+
+- språk
+- realiseringstype
+- serietyper
+- verkrelasjonstyper
+- agentroller
+
+I fase 1 brukes normalt ikke eksterne URI-er direkte i de operative tabellene.
+
+I stedet brukes stabile lokale koder med entydig mapping i vokabular- eller regelverket.
+
+---
+
 ## 1. Work og Expression
 
 ### Oversettelser
@@ -79,7 +99,9 @@ Eksempler:
 
 Realiseringstype registreres i feltet `expression_type`.
 
-Dette beskriver hvordan verket er realisert.
+Verdien skal være en stabil lokal kode.
+
+Feltet kan senere mappes til **RDA Content Type**.
 
 Eksempler:
 
@@ -87,8 +109,6 @@ Eksempler:
 - `spoken_word`
 - `moving_image`
 - `still_image`
-
-Feltet kan senere mappes til **RDA Content Type**.
 
 ### Bidrag på Expression-nivå
 
@@ -159,12 +179,26 @@ I fase 1 registreres primært sentrale karakterer med tydelig navigasjonsverdi.
 
 Relasjoner mellom verk registreres gjennom `WorkRelationship`.
 
-Eksempler:
+`WorkRelationship` brukes bare mellom to `Work`-poster.
 
-- adaptasjon
+Relasjonen er retningsbestemt og registreres med:
+
+- `source_work`
+- `target_work`
+- `relation_type`
+
+`relation_type` skal være en stabil lokal kontrollert kode.
+
+Koden skal kunne mappes entydig til relevant relasjonsvokabular, normalt **RDA Registry**.
+
+Eksempler på relasjonstyper som kan brukes i modelleringsreglene:
+
+- adaptasjon av
 - inspirert av
 - videreføring av
 - basert på
+
+Databasen avgjør ikke alene hvilke inverse former som skal foretrekkes eller hvordan grensetilfeller skal forstås. Dette styres av modelleringsreglene.
 
 ---
 
