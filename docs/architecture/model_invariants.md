@@ -409,6 +409,69 @@ Dette er en modellregel som bør håndheves teknisk, ikke bare gjennom registrer
 
 ---
 
+# 29. WorkCharacter er en eksplisitt koblingstabell mellom Work og Character
+
+Koblingen mellom `Work` og `Character` modelleres gjennom en egen tabell:
+
+- `WorkCharacter`
+
+Dette er en eksplisitt koblingsentitet i modellen, ikke bare en implisitt mange-til-mange-relasjon.
+
+Formålet er å støtte at:
+
+- ett `Work` kan ha flere `Character`
+- samme `Character` kan forekomme i flere `Work`
+
+---
+
+# 30. WorkCharacter kobler bare Work og Character
+
+`WorkCharacter` skal i fase 1 bare koble:
+
+- `Work`
+- `Character`
+
+`WorkCharacter` skal ikke kobles til:
+
+- `Expression`
+- `Manifestation`
+- `Item`
+
+Dette følger av at karakterer er definert som en `Work`-nivåegenskap i modellen.
+
+---
+
+# 31. WorkCharacter skal være unikt per work og character
+
+Samme kombinasjon av `work` og `character` skal ikke kunne registreres flere ganger.
+
+`WorkCharacter` skal derfor være unikt per:
+
+- (`work`, `character`)
+
+Dette er en modellregel som skal håndheves teknisk som databasekrav, ikke bare som registreringspraksis.
+
+---
+
+# 32. WorkCharacter har ingen ekstra relasjonsfelter i fase 1
+
+I fase 1 har `WorkCharacter` bare følgende felter:
+
+- `id`
+- `work`
+- `character`
+
+Følgende typer relasjonsdata er utsatt til senere fase:
+
+- rolle i verket
+- visningsrekkefølge eller prioritet
+- note
+- kilde
+- usikkerhetsmarkering
+- andre metadata på relasjonen
+
+---
+
 ## Bruk av dette dokumentet
 
 Dette dokumentet fungerer som en referanse for utvikling og migrasjoner.
