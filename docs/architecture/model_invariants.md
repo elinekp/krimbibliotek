@@ -85,6 +85,24 @@ Formålet er å sikre stabile identifikatorer uavhengig av databaseinstans eller
 
 ---
 
+# 6. Kontrollerte semantiske kategorier skal representeres med stabile koder
+
+I fase 1 skal kontrollerte typer, relasjoner, roller og andre semantiske kategorier representeres med stabile lokale koder.
+
+Slike koder skal kunne mappes entydig til relevante eksterne autoritetsregistre eller vokabularer der dette er faglig relevant.
+
+Dette gjelder blant annet:
+
+- `language_code`
+- `expression_type`
+- `series_type`
+- `relation_type`
+- rollekoder i `Role`
+
+Modellen skal ikke bygges på fritekst der semantikken bør være kontrollert.
+
+---
+
 # 6. Relasjonspolicy i fase 1
 
 Alle relasjoner bruker:
@@ -131,11 +149,19 @@ Forlagsserier knyttes derimot til `Manifestation`.
 
 ---
 
-# 10. Relasjoner mellom verk modelleres eksplisitt
+# 10. Relasjoner mellom verk modelleres eksplisitt og retningsbestemt
 
 Relasjoner mellom verk modelleres gjennom entiteten `WorkRelationship`.
 
-En enkel selvrefererende M2M brukes ikke, fordi relasjonstype må lagres.
+En enkel selvrefererende M2M brukes ikke, fordi relasjonstype må lagres eksplisitt.
+
+`WorkRelationship` skal:
+
+- koble `Work` til `Work`
+- være retningsbestemt
+- bruke obligatorisk `relation_type`
+- ikke tillate selvrelasjon
+- ikke tillate duplikat av (`source_work`, `target_work`, `relation_type`)
 
 ---
 
@@ -176,7 +202,9 @@ Dette beskriver realiseringstypen, for eksempel:
 - `moving_image`
 - `still_image`
 
-Feltet kan senere mappes til `RDA Content Type`.
+`expression_type` representeres i fase 1 som en stabil lokal kode.
+
+Koden skal kunne mappes entydig til `RDA Content Type`.
 
 ---
 
@@ -287,6 +315,8 @@ Dette feltet bruker et stramt kontrollert vokabular:
 
 - `narrative`
 - `publisher_series`
+
+`series_type` er en stabil kontrollert kode i fase 1.
 
 Dette beskytter skillet mellom:
 
