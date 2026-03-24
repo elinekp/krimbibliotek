@@ -682,6 +682,86 @@ Ulemper
 
 ---
 
+# ADR-017
+
+## Series og SeriesMembership strammes i fase 1
+
+### Context
+
+Prosjektet har allerede besluttet at serier modelleres gjennom:
+
+```
+Series
+SeriesMembership
+```
+
+og at `SeriesMembership` kan kobles til enten `Work` eller `Manifestation`.
+
+Etter tabellgjennomgangen var det nødvendig å presisere flere strukturkritiske spørsmål:
+
+- hvilke serietyper som støttes i fase 1
+- om én medlemskapsrad kan peke til både `Work` og `Manifestation`
+- hvordan duplikatmedlemskap skal forhindres
+- hvilke felter som faktisk skal inngå i fase 1
+
+Dette måtte avklares nå for å beskytte modellen mot uklar semantikk og dyr opprydding senere.
+
+### Decision
+
+`Series` beholdes som egen entitet, og `SeriesMembership` beholdes som egen koblingsentitet.
+
+I fase 1 får `Series` følgende felter:
+
+- `id`
+- `title`
+- `series_type`
+
+`series_type` er obligatorisk og bruker et stramt kontrollert vokabular i fase 1:
+
+- `narrative`
+- `publisher_series`
+
+Dette betyr at:
+
+- narrative serier modelleres på `Work`-nivå
+- forlagsserier modelleres på `Manifestation`-nivå
+
+I fase 1 får `SeriesMembership` følgende felter:
+
+- `id`
+- `series`
+- `work`
+- `manifestation`
+- `part_number`
+- `part_display`
+
+Følgende regler fryses som strukturkrav:
+
+- én rad i `SeriesMembership` skal peke til enten `Work` eller `Manifestation`, aldri begge
+- databasen skal håndheve at nøyaktig én av `work` og `manifestation` er fylt ut
+- databasen skal håndheve unikt medlemskap per (`series`, `work`)
+- databasen skal håndheve unikt medlemskap per (`series`, `manifestation`)
+- `part_number` er valgfritt
+- `context_note` utsettes fra fase 1
+- seriehierarki, som `parent_series`, utsettes til senere fase
+
+### Consequences
+
+Fordeler
+
+- tydelig semantisk skille mellom narrativ serie og forlagsserie
+- mindre risiko for duplikater og uklare seriekoblinger
+- enklere validering, spørring og senere UI-bygging
+- stram fase-1-modell uten unødvendige støttefelter
+
+Ulemper
+
+- mindre fleksibilitet for uvanlige eller tvetydige serietilfeller i første fase
+- hierarkiske serier og mer avanserte seriemodeller må komme senere
+- noen grensetilfeller må håndteres gjennom modelleringsregler, ikke gjennom ekstra databasefelter
+
+---
+
 # Fremtidige ADR-temaer
 
 Følgende temaer vil sannsynligvis kreve nye ADR-beslutninger senere:
