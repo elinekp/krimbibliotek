@@ -360,3 +360,100 @@ Følgende er utsatt:
 Dette er nyttige utvidelser, men ikke nødvendige for å beskytte grunnstrukturen nå.
 
 Målet i fase 1 er å få på plass en liten, tydelig og stabil seriemodell som kan utvides senere uten ombygging av kjernen.
+
+# Hvorfor Character modelleres som egen entitet
+
+Dette notatet dokumenterer begrunnelsene bak hvordan `Character` er modellert i fase 1 av prosjektet.
+
+## Hvorfor Character er en egen entitet
+
+Karakterer representerer ikke bare fritekst om et verk, men gjenbrukbare innholdselementer i modellen.
+
+Ved å modellere `Character` som egen entitet blir det mulig å:
+
+- gjenbruke samme karakter på tvers av flere verk
+- støtte søk, filtrering og navigasjon på karakter
+- skille tydelig mellom selve karakteren og koblingen mellom karakter og verk
+
+Dette er særlig relevant i et krimbibliotek, der karakterer ofte har høy formidlingsverdi.
+
+## Hvorfor Character kobles til Work
+
+Karakterer beskriver verkets innholdsmessige identitet, ikke språkversjon, utgave eller eksemplar.
+
+Derfor kobles `Character` til `Work`, ikke til:
+
+- `Expression`
+- `Manifestation`
+- `Item`
+
+Dette følger samme prinsipp som for sjanger og appellfaktorer: egenskaper som gjelder fortellingen som sådan legges på `Work`.
+
+## Hvorfor koblingen går via WorkCharacter
+
+Relasjonen mellom verk og karakter er mange-til-mange:
+
+- ett verk kan ha flere karakterer
+- samme karakter kan forekomme i flere verk
+
+Derfor modelleres koblingen gjennom en egen koblingstabell:
+
+`WorkCharacter`
+
+Dette er mer presist enn en direkte mange-til-mange uten eksplisitt koblingsentitet, og gjør det mulig å utvide koblingen senere dersom prosjektet får behov for flere opplysninger på relasjonen.
+
+## Hvorfor Character holdes minimal i fase 1
+
+I fase 1 har `Character` bare feltene:
+
+- `id`
+- `name`
+
+Dette er et bevisst valg.
+
+Målet er å få på plass en stabil og brukbar struktur uten å bygge en mer avansert karaktermodell før det faktisk er nødvendig.
+
+Ved å holde `Character` liten i første fase:
+
+- reduseres kompleksiteten i registrering og modellering
+- minskes risikoen for inkonsistente karakterdata
+- blir det lettere å etablere god praksis før flere felter eventuelt introduseres
+
+## Hvorfor variantnavn utsettes
+
+Karakternavn kan i praksis forekomme i flere former:
+
+- fullt navn
+- kortform
+- alternative stavemåter
+- små variasjoner i tegnsetting
+
+Likevel utsettes variantnavn i fase 1.
+
+Grunnen er at dette ikke er nødvendig for å beskytte grunnstrukturen nå. I første omgang er det viktigere å etablere én konsekvent foretrukket navneform per karakter enn å bygge støtte for navnevarianter.
+
+Dette betyr at navnevariasjoner i fase 1 må håndteres gjennom registreringspraksis, ikke gjennom ekstra databasefelter.
+
+## Hvorfor karakterroller utsettes
+
+Prosjektet skiller ikke i fase 1 mellom:
+
+- hovedkarakter
+- bikarakter
+- andre karaktertyper
+
+Dette er utsatt fordi slik rollemarkering ikke er nødvendig for å få på plass den grunnleggende karakterstrukturen.
+
+Dersom prosjektet senere ønsker å modellere karakterens funksjon i verket, bør dette vurderes som en utvidelse av koblingen mellom `Work` og `Character`, ikke som et tilfeldig tillegg på selve `Character`.
+
+## Hvorfor duplikatkoblinger ikke tillates
+
+Samme karakter skal ikke kunne kobles flere ganger til samme verk.
+
+Dette er valgt fordi duplikatkoblinger normalt ikke uttrykker ny informasjon, men snarere registreringsfeil eller uklar praksis.
+
+Derfor bør koblingen være unik per:
+
+- (`work`, `character`)
+
+Dette gjør karaktermodellen renere og mer forutsigbar.
