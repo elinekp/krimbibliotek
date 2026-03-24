@@ -821,6 +821,70 @@ Ulemper
 
 ---
 
+# ADR-019
+
+## WorkCharacter fryses som eksplisitt koblingstabell i fase 1
+
+### Context
+
+Prosjektet har allerede besluttet at `Character` skal være en egen entitet, at karakterer hører til `Work`-nivået, og at samme karakter skal kunne gjenbrukes på tvers av flere verk.
+
+Etter den videre tabellgjennomgangen var det nødvendig å presisere hvordan koblingen mellom `Work` og `Character` skal modelleres i fase 1.
+
+Det måtte avklares:
+
+- om koblingen skal være en eksplisitt tabell i modellen
+- om tabellen bare skal koble `Work` og `Character`
+- om samme kombinasjon skal kunne registreres flere ganger
+- hvilke felter koblingstabellen faktisk skal ha i fase 1
+- hvilke relasjonsfelter som bevisst skal utsettes
+
+Dette måtte avklares nå for å beskytte modellen mot uklar relasjonspraksis og for å holde karaktermodellen konsistent med resten av fase-1-arkitekturen.
+
+### Decision
+
+Koblingen mellom `Work` og `Character` modelleres gjennom en eksplisitt koblingstabell:
+
+```
+text
+WorkCharacter
+```
+
+`WorkCharacter` beholdes som egen tabell i modellen.
+
+I fase 1 får `WorkCharacter` følgende felter:
+
+- `id`
+- `work`
+- `character`
+
+Følgende regler fryses som strukturkrav:
+
+- `WorkCharacter` kobler bare `Work` og `Character`
+- samme kombinasjon av `work` og `character` kan ikke registreres flere ganger
+- databaseunikhet skal håndheves for (`work`, `character`)
+- `WorkCharacter` har ingen ekstra relasjonsfelter i fase 1
+- rollemarkering på relasjonen utsettes
+- visningsrekkefølge eller prioritet utsettes
+- note, kilde og andre metadata på relasjonen utsettes
+
+### Consequences
+
+Fordeler
+
+- tydelig og eksplisitt modellering av mange-til-mange mellom `Work` og `Character`
+- konsistent med prosjektets praksis om å synliggjøre koblingsentiteter som egne tabeller
+- enkelt å håndheve dataintegritet gjennom databaseunikhet
+- godt utgangspunkt for senere utvidelser av relasjonen uten å bygge om kjernen
+
+Ulemper
+
+- én ekstra tabell i modellen
+- relasjonen kan oppleves mer formell enn en ren skjult M2M-kobling
+- fremtidige behov som karakterrolle må fortsatt komme som senere utvidelser
+
+---
+
 # Fremtidige ADR-temaer
 
 Følgende temaer vil sannsynligvis kreve nye ADR-beslutninger senere:
