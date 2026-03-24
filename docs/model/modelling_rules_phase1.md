@@ -434,3 +434,76 @@ Fase 1 inkluderer ikke:
 - eksterne identifikatorer
 
 Hvis det oppstår behov for slike opplysninger, skal det vurderes som senere modellutvidelse, ikke løses ved å utvide fase-1-modellen ad hoc.
+
+## WorkCharacter i fase 1
+
+### Når WorkCharacter skal brukes
+
+`WorkCharacter` brukes når en karaktertilknytning mellom et verk og en karakter skal registreres eksplisitt i databasen.
+
+Tabellen brukes fordi:
+
+- ett verk kan ha flere karakterer
+- samme karakter kan forekomme i flere verk
+
+`WorkCharacter` er derfor den eksplisitte koblingen mellom `Work` og `Character`.
+
+---
+
+### Hvilket nivå WorkCharacter hører til
+
+`WorkCharacter` kobler bare:
+
+- `Work`
+- `Character`
+
+Tabellen skal ikke brukes mot:
+
+- `Expression`
+- `Manifestation`
+- `Item`
+
+Begrunnelse:
+
+Karakterer er modellert som en `Work`-nivåegenskap, og relasjonen skal derfor ligge på samme nivå.
+
+---
+
+### Fase-1-felter for WorkCharacter
+
+I fase 1 har `WorkCharacter` bare følgende felter:
+
+- `id`
+- `work`
+- `character`
+
+Alle tre feltene er obligatoriske i fase 1.
+
+---
+
+### Registreringsregel for duplikater
+
+Samme karakter skal ikke registreres flere ganger mot samme verk.
+
+Det betyr:
+
+- maks én rad per (`work`, `character`)
+
+Dette er ikke bare en anbefalt praksis, men en regel som skal håndheves teknisk.
+
+---
+
+### Hva som ikke gjøres i fase 1
+
+Fase 1 inkluderer ikke ekstra relasjonsfelter på `WorkCharacter`.
+
+Følgende er utsatt:
+
+- rolle i verket
+- visningsrekkefølge eller prioritet
+- note
+- kilde
+- usikkerhetsmarkering
+- andre metadata på relasjonen
+
+Hvis det senere blir behov for å beskrive karakterens funksjon i verket nærmere, skal dette vurderes som en senere utvidelse av `WorkCharacter`, ikke løses ad hoc i fase 1.
