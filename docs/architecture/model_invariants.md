@@ -347,6 +347,68 @@ Modellen skal tåle:
 
 ---
 
+# 25. Character er en egen entitet
+
+`Character` representerer en fiktiv figur som modelleres som egen entitet i databasen.
+
+Karakterer skal ikke registreres bare som fritekst på `Work`.
+
+Dette er valgt for å støtte:
+
+- gjenbruk av samme karakter på tvers av flere verk
+- karakterbasert søk og navigasjon
+- tydelig skille mellom selve karakteren og dens koblinger til verk
+
+I fase 1 har `Character` bare følgende felter:
+
+- `id`
+- `name`
+
+Andre karakterattributter er utsatt til senere fase.
+
+---
+
+# 26. Character kobles til Work
+
+Karakterer hører til `Work`-nivået i modellen.
+
+Karakterer skal ikke kobles direkte til:
+
+- `Expression`
+- `Manifestation`
+- `Item`
+
+Dette beskytter skillet mellom innholdsmessige egenskaper ved verket og uttrykks-, utgave- eller eksemplarspesifikke forhold.
+
+---
+
+# 27. Koblingen mellom Work og Character går via egen koblingstabell
+
+Koblingen mellom verk og karakter modelleres gjennom en egen koblingstabell:
+
+- `WorkCharacter`
+
+Dette er nødvendig fordi:
+
+- samme verk kan ha flere karakterer
+- samme karakter kan forekomme i flere verk
+
+Modellen skal derfor støtte mange-til-mange mellom `Work` og `Character`.
+
+---
+
+# 28. Samme Character kan ikke kobles flere ganger til samme Work
+
+Samme karakter skal ikke kunne registreres flere ganger mot samme verk.
+
+`WorkCharacter` skal derfor være unikt per:
+
+- (`work`, `character`)
+
+Dette er en modellregel som bør håndheves teknisk, ikke bare gjennom registreringspraksis.
+
+---
+
 ## Bruk av dette dokumentet
 
 Dette dokumentet fungerer som en referanse for utvikling og migrasjoner.
