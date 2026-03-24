@@ -237,3 +237,110 @@ I fase 1 er det akseptabelt å bruke fritekst som hovedpraksis.
 Om et eksemplar tilhører første utgave, fremgår dette gjennom vanlig utgaveinformasjon på `Manifestation`-nivå, ikke som eget boolsk felt på `Item`.
 
 Eventuelle copy-specific bibliografiske særtrekk vurderes senere og modelleres ikke særskilt i fase 1.
+
+## 7. Series og SeriesMembership i fase 1
+
+### Når Series skal brukes
+
+`Series` brukes når en serie skal modelleres som en egen, gjenbrukbar entitet i databasen.
+
+I fase 1 brukes `Series` for minst to serietyper:
+
+- narrative serier
+- forlagsserier
+
+`Series` skal ikke erstattes av fritekstfelt når formålet er å uttrykke faktisk serietilknytning i modellen.
+
+### Hvordan series_type skal brukes
+
+Hver `Series`-post skal ha en obligatorisk verdi i `series_type`.
+
+I fase 1 er vokabularet lukket og består bare av:
+
+- `narrative`
+- `publisher_series`
+
+Bruk:
+
+- `narrative` når serien uttrykker fortellingsmessig eller verkrelatert tilknytning
+- `publisher_series` når serien uttrykker utgave- eller publiseringsrelatert tilknytning på manifestasjonsnivå
+
+Andre serietyper utsettes til senere fase.
+
+`character_series` brukes ikke som egen `series_type` i fase 1.
+
+### Valg av nivå for serietilknytning
+
+Serietilknytning skal registreres på det nivået den faktisk hører hjemme.
+
+Bruk:
+
+- `Work` når serien er narrativ og gjelder verket som sådan
+- `Manifestation` når serien er knyttet til en bestemt utgave eller publiseringsform
+
+Hovedregel:
+
+- narrative serier registreres via `SeriesMembership` mot `Work`
+- forlagsserier registreres via `SeriesMembership` mot `Manifestation`
+
+Samme bok kan derfor ha:
+
+- en narrativ serietilknytning på `Work`
+- en forlagsserietilknytning på `Manifestation`
+
+Dette skal registreres som to ulike `SeriesMembership`-rader.
+
+### Hvordan SeriesMembership skal brukes
+
+`SeriesMembership` representerer én konkret kobling mellom en serie og dens mål.
+
+Én rad i `SeriesMembership` skal peke til:
+
+- enten `Work`
+- eller `Manifestation`
+
+Aldri begge samtidig.
+
+Det skal heller ikke opprettes rader uten mål.
+
+Samme serie skal ikke registreres flere ganger mot samme mål.
+
+Det betyr:
+
+- maks én rad per (`series`, `work`)
+- maks én rad per (`series`, `manifestation`)
+
+### Nummerering i SeriesMembership
+
+Fase 1 skal støtte enkel og praktisk nummerering uten å kreve full normalisering.
+
+Feltene brukes slik:
+
+- `part_number` brukes når nummereringen kan uttrykkes som en enkel sorterbar verdi
+- `part_display` brukes når nummereringen bør vises i en bestemt form, eller når den ikke passer rent i `part_number`
+
+Begge felter er valgfrie.
+
+Modellen skal derfor tåle:
+
+- serietilknytning uten nummer
+- nummerering bare i `part_display`
+- ulik verdi for sortering og visning
+
+Eksempler:
+
+- `part_number = 1`, `part_display = Del 1`
+- `part_number = 2`, `part_display = Bok 2`
+- `part_number = null`, `part_display = Del II`
+- `part_number = null`, `part_display = null`
+
+### Hva som ikke gjøres i fase 1
+
+Fase 1 inkluderer ikke:
+
+- `context_note` på `SeriesMembership`
+- seriehierarki som `parent_series`
+- variantnavn på `Series`
+- egne serietyper utover `narrative` og `publisher_series`
+
+Hvis et serietilfelle ikke passer rent i fase-1-modellen, skal det vurderes som et modelleringsspørsmål, ikke løses ved å utvide databasen ad hoc.
