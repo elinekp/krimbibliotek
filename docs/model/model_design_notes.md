@@ -457,3 +457,94 @@ Derfor bør koblingen være unik per:
 - (`work`, `character`)
 
 Dette gjør karaktermodellen renere og mer forutsigbar.
+
+# Hvorfor WorkCharacter modelleres som egen koblingstabell
+
+Dette notatet dokumenterer begrunnelsene bak hvordan `WorkCharacter` er modellert i fase 1 av prosjektet.
+
+## Hvorfor WorkCharacter er en egen tabell
+
+Relasjonen mellom `Work` og `Character` er mange-til-mange:
+
+- ett verk kan ha flere karakterer
+- samme karakter kan forekomme i flere verk
+
+Prosjektet kunne i prinsippet ha behandlet dette som en skjult mange-til-mange-kobling, men i fase 1 er det valgt å modellere relasjonen eksplisitt som en egen tabell:
+
+`WorkCharacter`
+
+Dette er i tråd med prosjektets generelle modellprinsipp om å gjøre viktige koblinger synlige når de er en del av den dokumenterte datamodellen.
+
+## Hvorfor WorkCharacter bare kobler Work og Character
+
+Karakterer er definert som en innholdsmessig egenskap ved verket og hører derfor til `Work`-nivået.
+
+Det betyr at koblingen til karakter ikke skal legges på:
+
+- `Expression`
+- `Manifestation`
+- `Item`
+
+`WorkCharacter` er derfor en ren kobling mellom `Work` og `Character`, og ingenting annet.
+
+Dette beskytter skillet mellom verkets innhold og senere nivåer i WEMI-strukturen.
+
+## Hvorfor WorkCharacter holdes minimal i fase 1
+
+I fase 1 har `WorkCharacter` bare feltene:
+
+- `id`
+- `work`
+- `character`
+
+Dette er et bevisst valg.
+
+Målet er å få på plass en stabil og tydelig relasjon uten å bygge inn flere tolkninger eller praksisvalg enn det som er nødvendig nå.
+
+Ved å holde tabellen minimal:
+
+- reduseres kompleksiteten i registrering
+- blir datamodellen lettere å forstå og vedlikeholde
+- unngår prosjektet å låse seg for tidlig til bestemte relasjonsattributter
+
+## Hvorfor duplikatkoblinger ikke tillates
+
+Samme kombinasjon av `work` og `character` skal ikke kunne registreres flere ganger.
+
+Dette er valgt fordi duplikatkoblinger normalt ikke uttrykker ny informasjon, men snarere registreringsfeil eller uklar praksis.
+
+Derfor håndheves unikhet for:
+
+- (`work`, `character`)
+
+som et databasekrav.
+
+Dette gir en renere og mer forutsigbar modell.
+
+## Hvorfor relasjonsmetadata utsettes
+
+Det kan senere bli behov for å beskrive koblingen mellom verk og karakter nærmere, for eksempel med:
+
+- rolle i verket
+- visningsrekkefølge
+- note
+- kilde
+- usikkerhetsmarkering
+
+Likevel utsettes dette i fase 1.
+
+Grunnen er at slike felter ikke er nødvendige for å beskytte grunnstrukturen nå. Først må prosjektet etablere en stabil basis for at karakterer i det hele tatt kan kobles konsistent til verk.
+
+Ved å utsette relasjonsmetadata unngår prosjektet at `WorkCharacter` blir et oppsamlingssted for tolkninger og lokale registreringsvalg i første fase.
+
+## Hvorfor id beholdes på WorkCharacter
+
+Selv om `WorkCharacter` er en enkel koblingstabell, beholdes et eget `id` i fase 1.
+
+Dette er valgt fordi det:
+
+- er konsistent med resten av modellen
+- gjør raden lettere å referere til eksplisitt
+- gjør det enklere å utvide tabellen senere uten å måtte endre primærnøkkelstrategi
+
+Dette gir litt mer formell struktur, men passer godt med prosjektets overordnede modellvalg.
