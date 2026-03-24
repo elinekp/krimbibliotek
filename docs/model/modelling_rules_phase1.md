@@ -344,3 +344,93 @@ Fase 1 inkluderer ikke:
 - egne serietyper utover `narrative` og `publisher_series`
 
 Hvis et serietilfelle ikke passer rent i fase-1-modellen, skal det vurderes som et modelleringsspørsmål, ikke løses ved å utvide databasen ad hoc.
+
+## Character i fase 1
+
+### Når Character skal brukes
+
+`Character` brukes når en fiktiv figur skal modelleres som en egen, gjenbrukbar entitet i databasen.
+
+Dette gjelder når figuren er relevant som identifiserbar karakter på tvers av ett eller flere verk, og når karakteren skal kunne brukes til søk, filtrering eller navigasjon.
+
+Karakterer skal ikke registreres bare som fritekst på `Work` dersom formålet er å uttrykke faktisk karaktertilknytning i modellen.
+
+---
+
+### Hvilket nivå Character hører til
+
+Karakterer registreres på `Work`-nivå.
+
+Dette betyr at karakterer:
+
+- ikke kobles til `Expression`
+- ikke kobles til `Manifestation`
+- ikke kobles til `Item`
+
+Begrunnelse:
+Karakterer er en del av verkets innholdsmessige identitet, ikke av språkversjon, utgave eller eksemplar.
+
+---
+
+### Hvordan koblingen mellom Work og Character skal brukes
+
+Koblingen mellom `Work` og `Character` går via en egen koblingstabell:
+
+- `WorkCharacter`
+
+Dette brukes fordi:
+
+- ett verk kan ha flere karakterer
+- samme karakter kan forekomme i flere verk
+
+Samme karakter skal ikke registreres flere ganger mot samme verk.
+
+Det betyr:
+
+- maks én rad per (`work`, `character`)
+
+---
+
+### Fase-1-felter for Character
+
+I fase 1 har `Character` bare følgende felter:
+
+- `id`
+- `name`
+
+`name` brukes som karakterens foretrukne navn i fase 1.
+
+Det innføres ikke eget felt for variantnavn i denne fasen.
+
+---
+
+### Navnepraksis i fase 1
+
+Fordi variantnavn er utsatt, må navnepraksis være stram.
+
+Hovedregel:
+Bruk én konsekvent foretrukket navneform per karakter.
+
+Dette er viktig for å redusere risikoen for at samme karakter opprettes flere ganger med små variasjoner i navn.
+
+Eksempler på variasjoner som i fase 1 må håndteres gjennom praksis, ikke egen struktur:
+
+- fullt navn vs. kortform
+- alternative stavemåter
+- små forskjeller i tegnsetting eller mellomnavn
+
+`name` er ikke en teknisk unik identifikator. Ulike karakterer kan ha samme navn. Det er `id` som identifiserer entiteten.
+
+---
+
+### Hva som ikke gjøres i fase 1
+
+Fase 1 inkluderer ikke:
+
+- variantnavn
+- beskrivelser eller noter på `Character`
+- rollemarkering som hovedkarakter / bikarakter
+- andre karakterattributter
+- eksterne identifikatorer
+
+Hvis det oppstår behov for slike opplysninger, skal det vurderes som senere modellutvidelse, ikke løses ved å utvide fase-1-modellen ad hoc.
