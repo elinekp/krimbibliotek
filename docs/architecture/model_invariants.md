@@ -67,6 +67,18 @@ Et `Item` kan ikke eksistere uten en `Manifestation`.
 
 ---
 
+# Contribution på Item brukes for proveniens, ikke sirkulasjon
+
+Når `Contribution` brukes på `Item` i fase 1, gjelder dette strukturert proveniens og copy-specific agentrelasjoner, for eksempel:
+
+- tidligere eier
+- giver
+- annen navngitt proveniensaktør
+
+Aktiv låner, utlånshistorikk og annen sirkulasjonslogikk skal ikke modelleres gjennom `Contribution` i fase 1.
+
+---
+
 # 5. Alle hovedentiteter bruker UUID som primærnøkkel
 
 Dette gjelder blant annet:
@@ -100,6 +112,56 @@ Dette gjelder blant annet:
 - rollekoder i `Role`
 
 Modellen skal ikke bygges på fritekst der semantikken bør være kontrollert.
+
+---
+
+# 7. Agent er en egen entitet for personer og organisasjoner
+
+`Agent` er en egen entitet i modellen.
+
+I fase 1 brukes `Agent` for både:
+
+- personer
+- organisasjoner
+
+`Agent` skal ha:
+
+- `id`
+- `name`
+- `agent_type`
+- `wikidata_id`
+
+`name` representerer agentens foretrukne navn.
+
+`agent_type` er obligatorisk og kontrollert.
+
+Roller skal ikke ligge på `Agent`, men i relasjonen mellom agent og målentitet.
+
+---
+
+8. # Contribution modellerer agentroller eksplisitt
+
+Bidrag modelleres gjennom entiteten `Contribution`.
+
+`Contribution` kobler en `Agent` til nøyaktig én målentitet og en rolle.
+
+I fase 1 kan `Contribution` kobles til:
+
+- `Work`
+- `Expression`
+- `Manifestation`
+- `Item`
+
+En rad i `Contribution` skal peke til nøyaktig én av disse målentitetene.
+
+Dette er en XOR-regel og skal håndheves av databasen.
+
+`Contribution` skal ha obligatoriske felter:
+
+- `agent`
+- `role`
+
+Samme kombinasjon av målentitet + agent + rolle skal ikke registreres flere ganger.
 
 ---
 
