@@ -1,786 +1,790 @@
-# Om stabile koder og linked-data-beredskap
+# Model Design Notes — Krimbiblioteket
 
-Prosjektet legger i fase 1 til rette for linked data ved å bruke stabile lokale koder for kontrollerte semantiske kategorier.
+Dette dokumentet samler designbetraktninger, forklarende resonnement og faglige nyanser knyttet til datamodellen i Krimbiblioteket.
 
-Dette gjelder blant annet typer, relasjoner, roller og andre kontrollerte vokabularverdier.
+Det er ikke prosjektets normative hovedkilde.
 
-Poenget er ikke å lagre alle eksterne URI-er direkte i operative tabeller fra start, men å sikre at lokale koder kan mappes entydig til relevante autoritetsregistre og vokabularer senere.
+Formålet er å dokumentere:
+- hvorfor modellen er tenkt som den er
+- hvilke avveininger som ligger bak viktige valg
+- hvilke framtidige utvidelser modellen prøver å holde åpne
+- hvilke produkt- og arkitekturretninger som påvirker modelltenkningen
 
-Dette beskytter modellen mot fritekstdrift og gjør senere interoperabilitet enklere.
+Dette dokumentet skal ikke brukes som eneste kilde for:
+- harde modellregler
+- databasekrav
+- kardinalitet og XOR-regler
+- endelige fase-1-beslutninger
+- prosjektstatus eller arbeidsrekkefølge
 
-# Work-nivået i modellen
+Normativt innhold hører primært hjemme i:
+- `ADR.md`
+- `model_invariants.md`
+- `modelling_rules_phase1.md`
 
-Dette notatet dokumenterer begrunnelsene bak hvordan Work er modellert i fase 1 av prosjektet.
+Dette dokumentet kan gjerne være mer resonnerende, mer forklarende og mer åpent om framtidige muligheter.
 
-## Hvorfor Work er holdt minimal
 
-Work representerer den **konseptuelle identiteten** til et verk.
+---
 
-Mange katalogsystemer fyller Work-nivået med et stort antall metadatafelt, men i dette prosjektet er Work bevisst holdt svært enkel i første fase.
+## 1. Overordnet designretning
 
-Følgende hensyn ligger bak beslutningen:
+Krimbiblioteket er tenkt som mer enn en tradisjonell katalog.
 
-- redusere kompleksitet i tidlig utvikling
-- unngå å modellere felter som senere viser seg å høre hjemme på Expression
-- gjøre det lettere å etablere stabile katalogiseringsregler
+Målet er å bygge en struktur som både kan:
+- støtte presis bibliografisk modellering
+- gi god navigasjon for brukere
+- tåle framtidige utvidelser uten at kjernen må tegnes om
 
-Work fungerer derfor primært som **ankeret i WEMI-strukturen**.
+Prosjektet prøver derfor å balansere to hensyn:
 
-## Hvorfor sjanger og appellfaktorer ligger på Work
+1. en stram bibliografisk kjerne som er mulig å bygge og vedlikeholde i fase 1  
+2. en modell som på sikt kan støtte rikere formidling, relasjoner, kuratering og utforsking
 
-Sjanger og appellfaktorer beskriver **selve fortellingen**, ikke en spesifikk utgave.
+Denne spenningen går igjen i mange av designvalgene:
+- hvorfor WEMI beholdes
+- hvorfor kontrollerte koder brukes tidlig
+- hvorfor noen ting bevisst utsettes
+- hvorfor enkelte koblingstabeller får egen identitet
 
-For eksempel:
 
-- en norsk oversettelse av en roman
-- en lydbokversjon
-- en ny paperbackutgave
+---
 
-vil normalt ha samme sjanger og samme appellstruktur.
+## 2. Hvorfor WEMI beholdes som kjerne
 
-Derfor er disse koblet til Work i stedet for Expression eller Manifestation.
+WEMI-strukturen gjør det mulig å skille mellom ulike typer bibliografiske forskjeller som ellers lett ville blitt blandet sammen.
 
-## Hvorfor karakterer kobles til Work
+Den viktigste gevinsten er at modellen kan uttrykke forskjellen mellom:
+- verkets identitet
+- verkets realisering
+- den publiserte utgaven
+- det konkrete eksemplaret
 
-Kriminallitteratur er ofte karakterdrevet.
+Dette er særlig viktig i et prosjekt som skal tåle:
+- oversettelser
+- lydbøker
+- ulike utgaveformer
+- forlagsserier
+- strukturert proveniens
+- verkrelasjoner
+- karaktersporing og andre navigasjonslag
 
-Ved å koble karakterer til Work blir det mulig å:
+Uten dette skillet ville modellen raskt blitt enklere i starten, men dyrere å rydde opp i senere.
 
-- navigere biblioteket etter karakterer
-- koble karakterer på tvers av forfattere (f.eks. pastisjer)
-- analysere karakterunivers på tvers av utgaver
+Ulempen er at modellen blir mer krevende å forstå og bruke, særlig i grensetilfeller. Derfor er prosjektet også avhengig av egne modelleringsregler ved siden av selve databasedesignet.
 
-Dette gir en mer fleksibel modell for litterær formidling.
 
-## Hvorfor Work kan eksistere uten Expression
+---
 
-Et Work kan registreres før konkrete uttrykk er katalogisert.
+## 3. Hvorfor Work, Expression, Manifestation og Item holdes tydelig fra hverandre
 
-Dette gjør det mulig å:
+En gjennomgående designambisjon er å unngå semantisk overlapp mellom nivåene.
 
-- registrere verk på konseptnivå
-- legge til Expression senere
-- modellere verk som eksisterer uavhengig av spesifikke utgaver
+Hvis samme type informasjon kan legges flere steder, oppstår det fort:
+- dobbeltregistrering
+- inkonsistente data
+- uklare søkeflater
+- dyr opprydding senere
 
-Denne beslutningen samsvarer med prinsippene i LRM.
+Derfor er nivåene tenkt med tydelige hovedroller:
 
-## Hvorfor Work vs Expression ikke løses i databasen
+- `Work` for verkets innholdsmessige og intellektuelle identitet
+- `Expression` for språk og realiseringsform
+- `Manifestation` for bibliografisk utgaveidentitet
+- `Item` for eksemplarspesifikke forhold
 
-Grensen mellom Work og Expression er i praksis et **katalogiseringsspørsmål**, ikke et databaseproblem.
+Dette skillet er ikke bare teoretisk. Det beskytter også framtidig funksjonalitet, fordi brukergrensesnitt, søk og importløp senere kan bygges på mer forutsigbare data.
 
-Eksempler som krever faglig vurdering:
 
-- sterkt reviderte tekster
-- grafiske adaptasjoner
-- dramatiseringer
-- forkortede utgaver
+---
 
-Disse vurderingene vil derfor bli definert i dokumentet:
+## 4. Hvorfor grenseoppganger ikke kan løses i databasen alene
 
-```
-Lokale modelleringsregler for fase 1
-```
+Databasen kan håndheve struktur, men ikke alltid semantisk tolkning.
 
-Databasen implementerer strukturen, mens katalogiseringsreglene definerer praksisen.
+Den kan for eksempel ikke alene avgjøre:
+- når noe er nytt `Work`
+- når noe er ny `Expression`
+- når noe er ny `Manifestation`
 
-## Hvorfor språk ligger på Expression
+Dette er et grunnleggende trekk ved prosjektet, ikke en midlertidig svakhet.
 
-Språk beskriver realiseringen av et verk, ikke selve verket.
+Derfor er dokumentasjonen delt i flere lag:
+- databasen beskytter struktur
+- invariants fryser harde regler
+- modelleringsreglene styrer praktisk bruk
+- designnotatene forklarer hvorfor valgene er tatt
 
-Et verk kan eksistere i flere språkversjoner, som alle representerer ulike Expressions.
+Dette er en bevisst arkitektur for dokumentasjon, ikke bare en praktisk nødløsning.
 
-Eksempel:
 
-```
-Work
- ├ Expression (eng)
- ├ Expression (nor)
- └ Expression (ger)
-```
+---
 
-Derfor er språk modellert på Expression-nivå.
+## 5. Hvorfor Expression–Manifestation beholdes som M2M
 
-## Hvorfor tekst og lydbok er ulike Expressions
+Valget om å modellere `Expression`–`Manifestation` som M2M via `ExpressionManifestation` gjør modellen mer kompleks enn en enkel 1:M-løsning.
 
-En lydbok er ikke bare en distribusjonsform av en tekst, men en egen realisering av verket.
+Likevel er dette valgt fordi prosjektet ønsker å tåle bibliografiske situasjoner som ellers blir vanskelige eller kunstige å modellere, særlig:
+- samlingsverk
+- antologier
+- omnibusutgaver
+- samleutgaver med flere uttrykk i samme utgivelse
+- samme realisering publisert i flere utgaver
 
-Lydboken innebærer blant annet:
+Dette er et klassisk tilfelle der prosjektet prioriterer strukturell robusthet over maksimal enkelhet i fase 1.
 
-- innlesning
-- performativ tolkning
-- egne bidragsytere (innleser)
+Fordelen er at modellen tåler mer fra start.
 
-Derfor modelleres tekst og lydbok som ulike Expressions.
+Ulempen er at det krever:
+- egen koblingstabell
+- mer bevisst registreringspraksis
+- forklaring av normalmønster versus særtilfeller
 
-## Hvorfor Expression kan ha flere forekomster med samme språk
+Det er derfor viktig å forstå at M2M her ikke betyr at alle registreringer blir kompliserte. Normalmønsteret i praksis vil fortsatt ofte være enkelt. Men modellen er ikke låst til bare det enkle tilfellet.
 
-Flere Expressions med samme språk og realiseringstype kan forekomme i situasjoner som:
 
-- sterkt reviderte tekster
-- forkortede versjoner
-- alternative realiseringer
+---
 
-Datamodellen begrenser derfor ikke slike situasjoner.
+## 6. Hvorfor ExpressionManifestation har egen identitet
 
-I stedet håndteres disse gjennom **lokale modelleringsregler.**
+At `ExpressionManifestation` har egen `id` kan virke tungt for en ren koblingstabell.
 
-## Hvorfor Manifestation representerer bibliografisk identitet på utgavenivå
+Valget er likevel fornuftig i dette prosjektet av flere grunner:
+- det gir konsistens med andre koblingstabeller
+- det gjør tabellen lettere å utvide senere
+- det gjør det enklere å referere til selve koblingen dersom nye egenskaper kommer
+- det passer bedre med en modell som forventes å vokse over tid
 
-`Manifestation` brukes til å modellere den konkrete publiserte utgaven av en `Expression`.
+Dette er ikke strengt nødvendig i alle systemer, men i denne modellen er det et valg som beskytter framtidig utvikling.
 
-Dette nivået brukes til å skille mellom ulike utgaver og publiseringsformer av samme realisering, for eksempel:
+Det samme mønsteret er derfor også brukt i tabeller som:
+- `WorkGenre`
+- `WorkAppealFactor`
+- `WorkCharacter`
 
+Prosjektet prioriterer her intern konsistens over minimalisme.
+
+
+---
+
+## 7. Hvorfor språk og realiseringstype ligger på Expression
+
+Språk og realiseringstype er lagt på `Expression` fordi de beskriver hvordan verket faktisk kommer til uttrykk, ikke hva verket er som abstrakt identitet.
+
+Dette gjør det mulig å uttrykke forskjeller som:
+- originaltekst versus oversettelse
+- tekst versus lydbok
+- andre realiseringsformer av samme verk
+
+Det gjør også at `Work` kan holdes relativt rent som bærer av verkidentitet, uten å bli overbelastet med egenskaper som egentlig tilhører realiseringen.
+
+En viktig konsekvens av dette er at samme `Work` kan ha flere `Expressions` som ligner hverandre sterkt. Det kan gi noen vanskelige grensetilfeller, men det er likevel bedre enn å tvinge slike forskjeller inn på feil nivå.
+
+
+---
+
+## 8. Hvorfor Manifestation holdes som bibliografisk utgavenivå
+
+`Manifestation` er ment å bære den bibliografiske identiteten på utgavenivå.
+
+Dette er viktig fordi mange forskjeller som brukere og bibliotekarer bryr seg om, ikke handler om nytt verk eller ny realisering, men om konkret publisert utgave:
 - hardcover
 - paperback
 - epub
 - pdf
+- ulike utgivere eller publiseringskontekster
 
-Disse forskjellene representerer ikke nye `Expressions`, men nye `Manifestations`.
+Ved å holde dette tydelig på `Manifestation` unngår prosjektet at slike variasjoner enten:
+- presses opp på `Expression`, der de ikke hører hjemme
+- eller ned på `Item`, der de blir copy-specific på feil måte
 
-Dette gjør skillet mellom `Expression` og `Manifestation` tydelig:
+Dette gir en ryddigere modell og bedre grunnlag for både bibliografisk arbeid og framtidig visning.
 
-- `Expression` = hvordan verket er realisert
-- `Manifestation` = hvordan denne realiseringen er publisert
 
-## Hvorfor ISBN ligger på Manifestation
+---
 
-ISBN identifiserer en konkret utgave og hører derfor til `Manifestation`-nivået.
+## 9. Hvorfor forlag modelleres via Agent og Contribution
 
-ISBN identifiserer ikke verket som abstrakt idé og heller ikke realiseringen som sådan.
+Prosjektet har valgt å modellere forlag via `Agent` og `Contribution` i stedet for å bruke et enkelt tekstfelt på `Manifestation`.
 
-## Hvorfor NB-identifikatoren lagres som nb_sesamid
-
-I fase 1 lagres Nasjonalbibliotekets identifikator som `nb_sesamid`.
-
-Dette er valgt for å være presis om hvilken NB-identifikator feltet faktisk representerer, og for å unngå uklarhet rundt et mer generelt `nb_id`.
-
-Siden denne identifikatoren peker til en konkret bibliografisk post eller utgave, hører den til `Manifestation`-nivået.
-
-## Hvorfor forlag modelleres via Contribution / Agent fra start
-
-Forlag hører til `Manifestation`-nivået fordi forlag er knyttet til den konkrete utgaven, ikke til `Work` eller `Expression`.
-
-Prosjektet velger å modellere forlag via `Contribution / Agent` allerede i fase 1, i stedet for å bruke et enkelt tekstfelt.
-
-Dette gir:
-
+Fordeler:
 - mer konsekvent rollemodell
-- bedre autoritetskontroll
-- mindre oppryddingsarbeid senere
+- bedre gjenbruk av aktørdata
+- lettere overgang til rikere autoritetsarbeid senere
+- mindre opprydding når modellen blir mer moden
 
-Ulempen er høyere registreringsfriksjon i fase 1, men dette er vurdert som akseptabelt for å beskytte modellen strukturelt.
+Ulemper:
+- høyere registreringsfriksjon i fase 1
+- større behov for konsekvent praksis rundt agentnavn
 
-## Hvorfor Item holdes på eksemplarnivå
+Dette er et bevisst valg der prosjektet aksepterer litt mer kompleksitet i starten for å beskytte modellens struktur senere.
 
-`Item` representerer det individuelle fysiske eksemplaret i samlingen.
 
-I fase 1 holdes `Item` bevisst på rent eksemplarnivå. Det betyr at `Item` brukes til data som gjelder det konkrete eksemplaret, ikke til bibliografiske data om utgaven.
+---
 
-Eksempler på data som hører til `Item`:
+## 10. Hvorfor Item holdes stramt på eksemplarnivå
 
+`Item` holdes med vilje smalt i fase 1.
+
+Det brukes for forhold som faktisk gjelder det individuelle eksemplaret, for eksempel:
 - hylleplassering
 - proveniens
 - lokale eksemplarnotater
-- senere eventuelt tilstand og utlånsrelaterte opplysninger
 
-Eksempler på data som ikke hører til `Item`:
+Dette er gjort for å beskytte skillet mellom:
+- bibliografisk identitet
+- copy-specific informasjon
 
-- ISBN
-- `nb_sesamid`
-- utgivelsesår
-- utgaveinformasjon som beskriver selve publikasjonen
+Hvis bibliografiske egenskaper flyttes ned på `Item`, oppstår det fort uklarhet om hva som gjelder alle eksemplarer av en utgave, og hva som gjelder ett bestemt eksemplar.
 
-Slike data hører til `Manifestation`, fordi de beskriver den bibliografiske identiteten på utgavenivå.
+Dette gjelder også små fristelser i registreringsarbeidet, som å legge utgaverelatert informasjon på itemnivå fordi den er “lett tilgjengelig der”. Modellen prøver bevisst å motstå slike snarveier.
 
-Dette skillet er viktig for å unngå at samme type informasjon registreres både på `Manifestation` og `Item`, noe som ville gi overlapp, inkonsistens og dyr opprydding senere.
 
-## Hvorfor proveniens i fase 1 håndteres enkelt
+---
 
-Proveniens beskriver et eksemplars eier- og historieforløp.
+## 11. Hvorfor proveniens i fase 1 håndteres pragmatisk
 
-Dette kan for eksempel omfatte:
+Proveniens er viktig for prosjektet, men fase 1 prøver likevel å holde registreringskostnaden nede.
 
-- tidligere eiere
-- gaveopplysninger
-- samlingstilknytning
-- ex libris
-- dedikasjoner
-- stempler eller andre spor på eksemplaret
+Derfor er hovedlinjen:
+- enkel proveniens kan registreres som fritekst
+- strukturert proveniens brukes når det gir tydelig merverdi
 
-I fase 1 håndteres proveniens normalt gjennom feltet:
+Denne pragmatiske linjen er viktig av to grunner.
 
-- `provenance_notes`
+For det første:
+ikke all proveniens er verdt å modellere tungt fra start.
 
-Dette er valgt for å holde registreringen enkel i første fase.
+For det andre:
+prosjektet ønsker å holde døren åpen for rikere proveniensmodellering senere, uten å gjøre fase 1 uforholdsmessig tung.
 
-Samtidig åpner modellen for at `Contribution` også kan kobles til `Item` når proveniens eller annen copy-specific agentrelasjon er viktig nok til å struktureres, for eksempel ved navngitte tidligere eiere eller givere.
+At `Contribution` også kan brukes på `Item`, gjør at modellen allerede nå kan håndtere navngitte tidligere eiere, givere eller andre copy-specific aktører når det faktisk er nyttig.
 
-Dette gjelder ikke aktiv låner, utlånshistorikk eller annen sirkulasjonslogikk i fase 1.
+Dette er et godt eksempel på prosjektets generelle strategi:
+ikke bygge alt nå, men heller ikke stenge for det.
 
-Valget i fase 1 er derfor:
 
-- enkel proveniens registreres som fritekst
-- strukturert proveniens brukes bare når det gir tydelig merverdi
+---
 
-## Hvorfor `is_first_edition` ikke brukes på Item
+## 12. Hvorfor `is_first_edition` ikke brukes på Item
 
-Et eget felt som `is_first_edition` brukes ikke på `Item`.
+Prosjektet har valgt å ikke bruke et eget felt som `is_first_edition` på `Item`.
 
-Om et eksemplar tilhører første utgave, fremgår dette gjennom vanlig utgaveinformasjon på `Manifestation`-nivå.
+Begrunnelsen er at førsteutgave i utgangspunktet er et spørsmål om utgaveidentitet, altså noe som hører hjemme på `Manifestation`-nivå, ikke på eksemplarnivå.
 
-Prosjektet legger derfor ikke inn et eget boolsk felt for dette, verken på `Item` eller som særskilt behov i fase 1.
+Hvis prosjektet senere ønsker å uttrykke copy-specific bibliografiske særtrekk på eksemplarnivå, bør dette modelleres med mer presis semantikk enn et generelt boolsk felt.
 
-Dersom prosjektet senere ønsker å registrere copy-specific bibliografiske særtrekk på eksemplarnivå, må dette vurderes som en egen problemstilling og modelleres med mer presis semantikk enn `is_first_edition`.
+Dette er et bevisst nei til en løsning som virker enkel, men som egentlig blander nivåene.
 
-# Hvorfor serier modelleres som egne entiteter
 
-Dette notatet dokumenterer begrunnelsene bak hvordan `Series` og `SeriesMembership` er modellert i fase 1 av prosjektet.
+---
 
-## Hvorfor Series er en egen entitet
+## 13. Hvorfor sjanger ligger på Work
 
-Serier representerer ikke bare en tekststreng, men en gjenbrukbar og navigerbar struktur i modellen.
+Sjanger beskriver først og fremst verkets innholdsmessige og fortellingsmessige karakter.
+
+Derfor er `Genre` lagt på `Work`-nivå.
+
+Dette gjør det mulig å:
+- beskrive samme verk konsistent på tvers av utgaver og realiseringer
+- støtte flere sjangre per verk
+- bygge navigasjon, filtrering og utforsking rundt verkets innhold
+
+En alternativ løsning kunne vært å registrere sjanger på utgavenivå eller som løs tagging, men det ville gitt svakere semantisk kontroll og dårligere grunnlag for videre utvikling.
+
+
+---
+
+## 14. Hvorfor AppealFactor ligger på Work
+
+Appellfaktorer beskriver leseropplevelse, stemning, fortellingsdriv og andre trekk ved verket slik det oppleves som fortelling.
+
+Derfor er `AppealFactor` også lagt på `Work`-nivå.
+
+Dette har flere fordeler:
+- appellfaktorer kan brukes på tvers av utgaver
+- vokabularet kan bygges som et eget kontrollert lag
+- det gir grunnlag for framtidig lesersørvis, anbefaling og navigasjon
+
+Samtidig er dette et område med mer tolkningsrom enn tradisjonell bibliografisk katalogisering. Derfor er det ekstra viktig at modellen ikke bare lagrer appellfaktorer, men også kan støtte definisjoner og omfangsnoter.
+
+Dette er grunnen til at `definition` og `scope_note` er tatt med allerede i fase 1.
+
+
+---
+
+## 15. Hvorfor sjanger og appellfaktor holdes adskilt
+
+Prosjektet prøver å holde tydelig skille mellom:
+- hva et verk er
+- hvordan det oppleves
+- hva det handler om
+
+Grovt sagt:
+- sjanger beskriver form og fortellingstype
+- appellfaktor beskriver leseopplevelse og fortellingskarakter
+- tematikk er noe annet igjen
+
+I praksis vil grensene ofte være porøse.
+
+Nettopp derfor er det viktig å holde vokabularene adskilt, selv om de noen ganger kan oppleves som overlappende. Hvis de kollapser inn i hverandre, blir både registreringspraksis og brukergrensesnitt raskt uklarere.
+
+Dette er et område der modelleringsreglene blir minst like viktige som selve tabellstrukturen.
+
+
+---
+
+## 16. Hvorfor hierarki støttes i Genre og AppealFactor
+
+Både `Genre` og `AppealFactor` er designet slik at hierarki kan uttrykkes eksplisitt.
+
+Dette er viktig fordi prosjektet ikke bare trenger flate etiketter, men også:
+- overordnede og underordnede kategorier
+- mer presis navigasjon
+- mulighet for framtidig utvidelse uten å bryte eksisterende struktur
+
+Hierarki er derfor ikke bare en “ekstra finesse”, men et grep som gjør vokabularene mer robuste over tid.
+
+Samtidig er hierarkiet i fase 1 holdt enkelt:
+- ett eksplisitt parent-felt
+- ingen mer avansert tesauruslogikk
+
+
+---
+
+## 17. Hvorfor synonymer utsettes, men ikke glemmes
+
+Prosjektet ser et klart framtidig behov for synonymer, særlig på appellfaktorsiden.
+
+Likevel er synonymer utsatt i fase 1.
+
+Grunnen er at en god synonymstruktur fort blir mer enn bare “noen ekstra tekststrenger”. Den kan få betydning for:
+- søk
+- vedlikehold
+- tvetydighetshåndtering
+- presentasjon
+- eventuell mapping mot andre vokabularer
+
+Å utsette dette er derfor ikke et tegn på at behovet er lite, men på at prosjektet ønsker å gjøre det ordentlig senere.
+
+Samtidig prøver modellen å være kompatibel med en senere utvidelse, for eksempel gjennom en framtidig tabell som:
+- `AppealFactorAltLabel`
+
+Dette er en typisk fase-1-strategi i prosjektet:
+utsett funksjonalitet, men ikke blokker for den.
+
+
+---
+
+## 18. Hvorfor Character er en egen entitet
+
+Prosjektet ønsker å støtte navigasjon og forbindelser som ikke bare går via forfatter, tittel og serie, men også via fiktive figurer.
+
+Derfor er `Character` modellert som egen entitet.
+
+Dette åpner blant annet for:
+- navigasjon via gjennomgående karakterer
+- kobling av verk på tvers av forfattere
+- støtte for pastisjer, videreføringer og andre karakterbaserte forbindelser
+
+At karakterer holdes på `Work`-nivå er viktig, fordi karakteren tilhører verkets fortellingsidentitet, ikke en bestemt utgave.
+
+
+---
+
+## 19. Hvorfor Character holdes enkel i fase 1
+
+Selv om karakterer er viktige for formidling og navigasjon, er `Character` bevisst holdt enkel i fase 1.
+
+Foreløpig brukes bare:
+- `id`
+- `name`
+
+Dette er gjort for å:
+- få på plass den viktigste navigasjonsstrukturen
+- unngå at karaktermodellen blir et eget stort delprosjekt
+- lære mer om faktisk bruk før modellen utvides
+
+Det betyr også at framtidige behov som variantnavn, notater, identifikatorer eller relasjonstyper mellom karakterer og verk ennå ikke er modellert.
+
+Dette er akseptabelt så lenge prosjektet er bevisst på begrensningen.
+
+
+---
+
+## 20. Hvorfor WorkCharacter er en ren kobling i fase 1
+
+`WorkCharacter` er holdt som en enkel kobling uten ekstra metadata.
+
+Dette er valgt fordi hovedbehovet i fase 1 er å uttrykke at en karakter forekommer i et verk.
+
+Mer avanserte spørsmål er utsatt, for eksempel:
+- karakterrolle
+- betydningsgrad
+- note
+- kilde
+- usikkerhet
+
+Fordelen er en enkel og tydelig modell.
+
+Ulempen er at noen nyanser går tapt i første omgang.
+
+Prosjektet har vurdert dette som en god avgrensning i fase 1.
+
+
+---
+
+## 21. Hvorfor serier modelleres som egne entiteter
+
+Serier representerer ikke bare en tekststreng, men en gjenbrukbar og navigerbar struktur.
 
 Ved å modellere `Series` som egen entitet blir det mulig å:
-
 - gjenbruke samme serie på tvers av flere verk eller utgaver
-- skille tydelig mellom selve serien og det enkelte medlemskapet
+- skille mellom selve serien og det konkrete medlemskapet
 - støtte flere serietyper uten å miste struktur
 - bygge navigasjon og filtrering på serie senere
 
-Dette er viktig fordi prosjektet allerede skal støtte minst to ulike seriekonsepter:
-
+Dette er viktig fordi prosjektet allerede i fase 1 trenger å skille mellom minst to seriekonsepter:
 - narrative serier
 - forlagsserier
 
-## Hvorfor series_type er obligatorisk
 
-Samme tabell brukes i fase 1 til både narrative serier og forlagsserier.
+---
 
-For å unngå uklar semantikk må hver `Series`-post derfor ha en eksplisitt type.
+## 22. Hvorfor series_type er obligatorisk
 
-I fase 1 brukes et lite og lukket vokabular:
+Når samme serietabell brukes for ulike seriekonsepter, blir typeangivelsen viktig for semantisk klarhet.
 
-- `narrative`
-- `publisher_series`
+At `series_type` er obligatorisk, gjør det mulig å:
+- validere data tydeligere
+- styre nivåplassering mer konsekvent
+- bygge spørringer og grensesnitt med mindre tvetydighet
 
-Dette gir en stram modell med lav risiko for lokal variasjon i verdier, og gjør det enklere å validere data og bygge spørringer senere.
+I fase 1 er vokabularet med vilje holdt stramt.
 
-Andre serietyper utsettes til senere fase.
+Det gir mindre fleksibilitet på kort sikt, men også mindre risiko for at like tilfeller registreres ulikt.
 
-## Hvorfor SeriesMembership er en egen koblingsentitet
 
-Serietilknytning er ikke bare en enkel mange-til-mange-relasjon.
+---
 
-Et medlemskap i en serie kan også ha egne egenskaper, særlig:
+## 23. Hvorfor serier kan ligge på ulike nivåer
 
-- rekkefølge
-- nummerering for visning
-- eventuell fremtidig kontekst
-
-Derfor modelleres serietilknytning gjennom en egen entitet:
-
-`SeriesMembership`
-
-Dette gjør det mulig å holde selve serien adskilt fra opplysninger som gjelder ett bestemt medlemskap.
-
-## Hvorfor serier kan ligge på ulike nivåer i modellen
-
-Prosjektet har skilt mellom to hovedtyper serie i fase 1:
-
+Prosjektet har skilt mellom to hovedtyper serier i fase 1:
 - narrative serier
 - forlagsserier
 
-Disse hører ikke til samme nivå i WEMI-strukturen.
+Disse hører ikke hjemme på samme nivå i WEMI-strukturen.
 
 Narrative serier beskriver verkets fortellingsmessige tilknytning og hører derfor til `Work`.
 
-Forlagsserier beskriver en konkret utgave- eller publiseringskontekst og hører derfor til `Manifestation`.
+Forlagsserier beskriver en konkret publiserings- eller utgavekontekst og hører derfor til `Manifestation`.
 
-Dette gjør det mulig at samme bok kan ha:
+Dette gjør modellen mer presis, men også mer krevende enn en løsning der “serie” bare er ett generelt felt.
 
-- en narrativ serie på `Work`
-- en forlagsserie på `Manifestation`
 
-uten at disse blandes sammen.
+---
 
-## Hvorfor én rad i SeriesMembership peker til enten Work eller Manifestation
+## 24. Hvorfor SeriesMembership er en egen koblingsentitet
 
-Én rad i `SeriesMembership` representerer én konkret serietilknytning.
+Serietilknytning er ikke bare en ren M2M-relasjon.
 
-For å holde modellen entydig skal en medlemskapsrad derfor peke til:
+Et medlemskap i en serie kan også ha egne egenskaper, særlig:
+- nummerering
+- visningsform
+- senere eventuelt annen kontekst
 
-- enten `Work`
-- eller `Manifestation`
+Derfor er `SeriesMembership` modellert som egen entitet.
 
-Aldri begge samtidig.
+Dette gjør det mulig å holde selve serien adskilt fra opplysninger som gjelder et bestemt medlemskap.
 
-Hvis én rad kunne peke til begge nivåer, ville det bli uklart hva medlemskapet faktisk beskriver.
 
-Derfor er modellen strammet slik at hver rad uttrykker én type tilknytning.
+---
 
-## Hvorfor duplikatmedlemskap ikke tillates
+## 25. Hvorfor part_number og part_display ligger på medlemskapet
 
-Samme serie skal ikke kunne registreres flere ganger mot samme mål.
-
-Det betyr at prosjektet beskytter mot:
-
-- samme `Series` koblet flere ganger til samme `Work`
-- samme `Series` koblet flere ganger til samme `Manifestation`
-
-Dette er valgt fordi slike duplikater normalt ikke uttrykker ny informasjon, men heller registreringsfeil eller inkonsistent praksis.
-
-Derfor håndheves dette som databasekrav, ikke bare som anbefalt praksis.
-
-## Hvorfor part_number og part_display ligger på medlemskapet
-
-Nummerering er ikke en egenskap ved serien som abstrakt entitet, men ved forholdet mellom serien og et bestemt verk eller en bestemt manifestasjon.
+Nummerering er ikke en egenskap ved serien som abstrakt størrelse, men ved forholdet mellom serien og et bestemt verk eller en bestemt manifestasjon.
 
 Derfor ligger:
-
 - `part_number`
 - `part_display`
 
 på `SeriesMembership`, ikke på `Series`.
 
-Dette gjør det mulig at samme serie kan brukes mot mange mål med ulik eller manglende nummerering.
+Dette gir bedre semantisk presisjon og mer fleksibilitet i visning og sortering.
 
-## Hvorfor nummerering er valgfri i fase 1
 
-Ikke alle serietilknytninger har kjent, stabil eller normaliserbar nummerering.
+---
 
-Modellen må derfor tåle:
+## 26. Hvorfor WorkRelationship er eksplisitt og retningsbestemt
 
-- serietilknytning uten nummer
-- nummerering bare som visningsstreng
-- ulik verdi for sortering og visning
+Relasjoner mellom verk er ikke bare “koblet eller ikke koblet”.
 
-Derfor er både `part_number` og `part_display` valgfrie i fase 1.
+Prosjektet ønsker å uttrykke hva slags forhold som finnes mellom to verk, og i hvilken retning det forstås.
 
-Dette gir nok fleksibilitet uten å utvide modellen unødvendig.
+Derfor er `WorkRelationship` modellert som eksplisitt relasjonsentitet med kontrollert relasjonstype.
 
-## Hvorfor flere serieutvidelser utsettes
-
-Fase 1 holder seriemodellen bevisst stram.
-
-Følgende er utsatt:
-
-- `context_note`
-- variantnavn på `Series`
-- seriehierarki som `parent_series`
-- flere `series_type`-verdier enn de to grunnleggende
-
-Dette er nyttige utvidelser, men ikke nødvendige for å beskytte grunnstrukturen nå.
-
-Målet i fase 1 er å få på plass en liten, tydelig og stabil seriemodell som kan utvides senere uten ombygging av kjernen.
-
-# Hvorfor Character modelleres som egen entitet
-
-Dette notatet dokumenterer begrunnelsene bak hvordan `Character` er modellert i fase 1 av prosjektet.
-
-## Hvorfor Character er en egen entitet
-
-Karakterer representerer ikke bare fritekst om et verk, men gjenbrukbare innholdselementer i modellen.
-
-Ved å modellere `Character` som egen entitet blir det mulig å:
-
-- gjenbruke samme karakter på tvers av flere verk
-- støtte søk, filtrering og navigasjon på karakter
-- skille tydelig mellom selve karakteren og koblingen mellom karakter og verk
-
-Dette er særlig relevant i et krimbibliotek, der karakterer ofte har høy formidlingsverdi.
-
-## Hvorfor Character kobles til Work
-
-Karakterer beskriver verkets innholdsmessige identitet, ikke språkversjon, utgave eller eksemplar.
-
-Derfor kobles `Character` til `Work`, ikke til:
-
-- `Expression`
-- `Manifestation`
-- `Item`
-
-Dette følger samme prinsipp som for sjanger og appellfaktorer: egenskaper som gjelder fortellingen som sådan legges på `Work`.
-
-## Hvorfor koblingen går via WorkCharacter
-
-Relasjonen mellom verk og karakter er mange-til-mange:
-
-- ett verk kan ha flere karakterer
-- samme karakter kan forekomme i flere verk
-
-Derfor modelleres koblingen gjennom en egen koblingstabell:
-
-`WorkCharacter`
-
-Dette er mer presist enn en direkte mange-til-mange uten eksplisitt koblingsentitet, og gjør det mulig å utvide koblingen senere dersom prosjektet får behov for flere opplysninger på relasjonen.
-
-## Hvorfor Character holdes minimal i fase 1
-
-I fase 1 har `Character` bare feltene:
-
-- `id`
-- `name`
-
-Dette er et bevisst valg.
-
-Målet er å få på plass en stabil og brukbar struktur uten å bygge en mer avansert karaktermodell før det faktisk er nødvendig.
-
-Ved å holde `Character` liten i første fase:
-
-- reduseres kompleksiteten i registrering og modellering
-- minskes risikoen for inkonsistente karakterdata
-- blir det lettere å etablere god praksis før flere felter eventuelt introduseres
-
-## Hvorfor variantnavn utsettes
-
-Karakternavn kan i praksis forekomme i flere former:
-
-- fullt navn
-- kortform
-- alternative stavemåter
-- små variasjoner i tegnsetting
-
-Likevel utsettes variantnavn i fase 1.
-
-Grunnen er at dette ikke er nødvendig for å beskytte grunnstrukturen nå. I første omgang er det viktigere å etablere én konsekvent foretrukket navneform per karakter enn å bygge støtte for navnevarianter.
-
-Dette betyr at navnevariasjoner i fase 1 må håndteres gjennom registreringspraksis, ikke gjennom ekstra databasefelter.
-
-## Hvorfor karakterroller utsettes
-
-Prosjektet skiller ikke i fase 1 mellom:
-
-- hovedkarakter
-- bikarakter
-- andre karaktertyper
-
-Dette er utsatt fordi slik rollemarkering ikke er nødvendig for å få på plass den grunnleggende karakterstrukturen.
-
-Dersom prosjektet senere ønsker å modellere karakterens funksjon i verket, bør dette vurderes som en utvidelse av koblingen mellom `Work` og `Character`, ikke som et tilfeldig tillegg på selve `Character`.
-
-## Hvorfor duplikatkoblinger ikke tillates
-
-Samme karakter skal ikke kunne kobles flere ganger til samme verk.
-
-Dette er valgt fordi duplikatkoblinger normalt ikke uttrykker ny informasjon, men snarere registreringsfeil eller uklar praksis.
-
-Derfor bør koblingen være unik per:
-
-- (`work`, `character`)
-
-Dette gjør karaktermodellen renere og mer forutsigbar.
-
-# Hvorfor WorkCharacter modelleres som egen koblingstabell
-
-Dette notatet dokumenterer begrunnelsene bak hvordan `WorkCharacter` er modellert i fase 1 av prosjektet.
-
-## Hvorfor WorkCharacter er en egen tabell
-
-Relasjonen mellom `Work` og `Character` er mange-til-mange:
-
-- ett verk kan ha flere karakterer
-- samme karakter kan forekomme i flere verk
-
-Prosjektet kunne i prinsippet ha behandlet dette som en skjult mange-til-mange-kobling, men i fase 1 er det valgt å modellere relasjonen eksplisitt som en egen tabell:
-
-`WorkCharacter`
-
-Dette er i tråd med prosjektets generelle modellprinsipp om å gjøre viktige koblinger synlige når de er en del av den dokumenterte datamodellen.
-
-## Hvorfor WorkCharacter bare kobler Work og Character
-
-Karakterer er definert som en innholdsmessig egenskap ved verket og hører derfor til `Work`-nivået.
-
-Det betyr at koblingen til karakter ikke skal legges på:
-
-- `Expression`
-- `Manifestation`
-- `Item`
-
-`WorkCharacter` er derfor en ren kobling mellom `Work` og `Character`, og ingenting annet.
-
-Dette beskytter skillet mellom verkets innhold og senere nivåer i WEMI-strukturen.
-
-## Hvorfor WorkCharacter holdes minimal i fase 1
-
-I fase 1 har `WorkCharacter` bare feltene:
-
-- `id`
-- `work`
-- `character`
-
-Dette er et bevisst valg.
-
-Målet er å få på plass en stabil og tydelig relasjon uten å bygge inn flere tolkninger eller praksisvalg enn det som er nødvendig nå.
-
-Ved å holde tabellen minimal:
-
-- reduseres kompleksiteten i registrering
-- blir datamodellen lettere å forstå og vedlikeholde
-- unngår prosjektet å låse seg for tidlig til bestemte relasjonsattributter
-
-## Hvorfor duplikatkoblinger ikke tillates
-
-Samme kombinasjon av `work` og `character` skal ikke kunne registreres flere ganger.
-
-Dette er valgt fordi duplikatkoblinger normalt ikke uttrykker ny informasjon, men snarere registreringsfeil eller uklar praksis.
-
-Derfor håndheves unikhet for:
-
-- (`work`, `character`)
-
-som et databasekrav.
-
-Dette gir en renere og mer forutsigbar modell.
-
-## Hvorfor relasjonsmetadata utsettes
-
-Det kan senere bli behov for å beskrive koblingen mellom verk og karakter nærmere, for eksempel med:
-
-- rolle i verket
-- visningsrekkefølge
-- note
-- kilde
-- usikkerhetsmarkering
-
-Likevel utsettes dette i fase 1.
-
-Grunnen er at slike felter ikke er nødvendige for å beskytte grunnstrukturen nå. Først må prosjektet etablere en stabil basis for at karakterer i det hele tatt kan kobles konsistent til verk.
-
-Ved å utsette relasjonsmetadata unngår prosjektet at `WorkCharacter` blir et oppsamlingssted for tolkninger og lokale registreringsvalg i første fase.
-
-## Hvorfor id beholdes på WorkCharacter
-
-Selv om `WorkCharacter` er en enkel koblingstabell, beholdes et eget `id` i fase 1.
-
-Dette er valgt fordi det:
-
-- er konsistent med resten av modellen
-- gjør raden lettere å referere til eksplisitt
-- gjør det enklere å utvide tabellen senere uten å måtte endre primærnøkkelstrategi
-
-Dette gir litt mer formell struktur, men passer godt med prosjektets overordnede modellvalg.
-
-# Hvorfor WorkRelationship modelleres som egen koblingstabell
-
-Dette notatet dokumenterer begrunnelsene bak hvordan `WorkRelationship` er modellert i fase 1 av prosjektet.
-
-## Hvorfor WorkRelationship er en egen tabell
-
-Relasjoner mellom verk er ikke bare en skjult mange-til-mange-kobling.
-
-Prosjektet må kunne bevare relasjonstypen som eksplisitt data.
-
-Derfor modelleres verkrelasjoner gjennom en egen entitet:
-
-`WorkRelationship`
-
-Dette er i tråd med prosjektets generelle modellprinsipp om å synliggjøre viktige koblinger når de har egen semantikk.
-
-## Hvorfor WorkRelationship bare kobler Work til Work
-
-`WorkRelationship` beskriver intellektuelle relasjoner mellom verk.
-
-Derfor skal koblingen ligge på `Work`-nivå, ikke på:
-
-- `Expression`
-- `Manifestation`
-- `Item`
-
-Dette beskytter skillet mellom verkrelasjoner og bibliografisk sammenstilling.
-
-## Hvorfor relasjonen er retningsbestemt
-
-Mange verkrelasjoner er ikke symmetriske.
-
-Eksempler:
-
-- basert på
+Dette gjør det mulig å uttrykke forbindelser som:
+- adaptasjon
 - inspirert av
-- videreføring av
+- videreføring
+- basert på
 
-Derfor må relasjonen uttrykkes som en rettet kobling mellom:
+Samtidig krever dette strengere praksis, fordi retning og relasjonstype må brukes konsekvent for at dataene skal bli meningsfulle.
 
-- `source_work`
-- `target_work`
 
-## Hvorfor relation_type er obligatorisk
+---
 
-Uten `relation_type` ville tabellen bare uttrykke at to verk henger sammen, uten å si hvordan.
+## 27. Hvorfor Agent er samlet for personer og organisasjoner
 
-Det ville gjøre modellen semantisk svak og mindre nyttig både for katalogisering og formidling.
+Prosjektet har valgt én samlet `Agent`-entitet for både personer og organisasjoner.
 
-I fase 1 er `relation_type` derfor obligatorisk.
+Fordeler:
+- enklere generell relasjonsmodell
+- samme bidragsstruktur kan brukes på tvers av aktørtyper
+- mindre behov for parallelle tabeller og koblingslogikk
 
-## Hvorfor relation_type er en stabil kode
+Ulempen er at enkelte framtidige behov kan bli mer komplekse, for eksempel hvis personer og organisasjoner senere får svært ulike attributter.
 
-`relation_type` skal ikke være fritekst.
+I fase 1 vurderes fordelene som klart større enn ulempene.
 
-I fase 1 brukes en stabil lokal kode som kan mappes entydig til relevant relasjonsvokabular, normalt `RDA Registry`.
 
-Dette gjør modellen bedre egnet for linked data senere, uten å tvinge eksterne URI-er inn i selve arbeidstabellen fra start.
+---
 
-## Hvorfor duplikater og selvrelasjoner ikke tillates
+## 28. Hvorfor rolle ligger i relasjonen, ikke på Agent
 
-Samme relasjon skal ikke registreres flere ganger mellom samme to verk med samme relasjonstype.
+At rolle ligger i `Contribution` og ikke på `Agent`, er et grunnleggende designvalg.
 
-Derfor håndheves unikhet for:
-
-- (`source_work`, `target_work`, `relation_type`)
-
-I tillegg skal et verk ikke kunne stå i relasjon til seg selv i samme rad.
-
-# Hvorfor Agent modelleres som egen entitet
-
-Dette notatet dokumenterer hvorfor `Agent` er modellert som egen entitet i fase 1.
-
-## Hvorfor Agent er en egen tabell
-
-Aktører forekommer på tvers av flere nivåer i modellen.
-
-Eksempler:
-
-- forfatter på `Work`
-- oversetter på `Expression`
-- innleser på `Expression`
-- forlag på `Manifestation`
-- tidligere eier eller giver på `Item`
-
-Dersom navn på slike aktører bare ble lagret direkte i ulike tabeller eller rollefelt, ville modellen blitt inkonsistent og vanskelig å utvide.
-
-Prosjektet modellerer derfor `Agent` som en egen, gjenbrukbar entitet.
-
-## Hvorfor Agent brukes for både person og organisasjon
-
-I fase 1 brukes samme `Agent`-modell for både:
-
-- personer
-- organisasjoner
-
-Dette gir en enklere og mer samlet modell enn å splitte tidlig i egne tabeller for person og korporasjon.
-
-For å unngå uklarhet må `Agent` ha et obligatorisk felt:
-
-- `agent_type`
-
-I fase 1 brukes minst verdiene:
-
-- `person`
-- `organization`
-
-## Hvorfor name forstås som foretrukket navn
-
-I fase 1 lagres ett navn direkte på `Agent`.
-
-Dette feltet forstås som agentens foretrukne navn.
-
-Valget gjør fase-1-modellen enkel, samtidig som det holder åpent for senere utvidelser med:
-
-- variantnavn
-- pseudonymer
-- mer full autoritetsstruktur
-
-## Hvorfor wikidata_id tas med fra start
-
-Prosjektet ønsker å støtte minst én ekstern identifikator på `Agent` i fase 1.
-
-Valget faller på:
-
-- `wikidata_id`
-
-Dette gir en enkel, men nyttig kobling til ekstern identitet uten å innføre full generell identifikatorstruktur allerede nå.
-
-# Hvorfor Contribution modelleres som egen koblingstabell
-
-Dette notatet dokumenterer hvorfor `Contribution` er modellert som egen koblingstabell i fase 1.
-
-## Hvorfor rollen ligger i relasjonen
-
-En agent er ikke "forfatter" eller "oversetter" i seg selv.
-
-Rollen oppstår i forhold til noe bestemt.
-
-Derfor legges rollen i relasjonen mellom agent og målentitet, ikke på `Agent`.
-
-## Hvorfor Contribution kobles til flere nivåer
-
-Prosjektet trenger én samlet modell for agentroller på tvers av flere nivåer.
-
-I fase 1 kan `Contribution` kobles til:
-
-- `Work`
-- `Expression`
-- `Manifestation`
-- `Item`
-
-Dette gjør det mulig å modellere blant annet:
-
-- forfatter på verk
-- oversetter og innleser på expression
-- forlag på manifestation
-- navngitt proveniens på item
-
-## Hvorfor Contribution bruker XOR-struktur
-
-`Contribution` har ett mulig felt per støttet målentitet:
-
-- `work`
-- `expression`
-- `manifestation`
-- `item`
-
-Én rad skal peke til nøyaktig én av disse.
-
-Dette gir flere tomme felt per rad, men gir samtidig:
-
-- tydeligere modell
-- ekte fremmednøkler
-- sterkere databaseintegritet
-- mindre risiko for feil enn en polymorf target_type/target_id-løsning
-
-## Hvorfor Item-bidrag avgrenses i fase 1
-
-Når `Contribution` brukes på `Item`, er dette i fase 1 ment for strukturert proveniens og andre copy-specific agentrelasjoner.
-
-Eksempler:
-
-- tidligere eier
-- giver
-
-Aktiv utlånshåndtering og annen sirkulasjonslogikk modelleres ikke her i fase 1.
-
-# Hvorfor Role modelleres som egen entitet
-
-En agent har ikke én fast rolle i modellen.
-
-Samme agent kan være:
-
-- forfatter av ett verk
+En aktør har ikke én rolle i seg selv. Rollen oppstår i forhold til noe:
+- forfatter av et verk
 - oversetter av en expression
-- forlag på en manifestation
-- tidligere eier av et item
+- forlag for en manifestation
+- giver til et item
 
-Derfor kan ikke rolle ligge på `Agent`.
+Dette er en klassisk relasjonell fordel ved modellen.
 
-Rollen må ligge i relasjonen mellom agent og målentitet.
+Det gjør også at samme aktør kan ha flere roller uten at agentposten må dupliseres eller forvrenges.
 
-Prosjektet bruker `Contribution` til å koble agenter til ulike nivåer i modellen.
 
-Dette krever et kontrollert rolle-vokabular.
+---
 
-I stedet for fritekst eller løse etiketter modelleres dette som en egen entitet:
+## 29. Hvorfor Contribution får bred anvendelse i modellen
 
-`Role`
+`Contribution` brukes på flere nivåer i modellen fordi prosjektet ønsker en konsekvent måte å uttrykke aktør + rolle + målentitet på.
 
-I fase 1 brukes:
+Dette gir en samlet relasjonslogikk for:
+- verkroller
+- realiseringsroller
+- utgaveroller
+- strukturert proveniens
 
-- `code` som stabil lokal, standardnær identifikator
-- `label` som menneskelesbar visningstekst
+Fordelen er høy intern konsistens.
 
-Dette gjør det mulig å holde intern identitet stabil selv om visningsetiketter senere må justeres.
+Ulempen er at registreringspraksisen må være tydelig, ellers kan samme type rolle bli lagt på feil nivå.
 
-Prosjektet ønsker linked-data-beredskap uten å kreve at alle eksterne URI-er lagres direkte i operative tabeller.
 
-Derfor brukes stabile lokale rollekoder i fase 1.
+---
 
-Disse skal kunne mappes entydig til relevant eksternt vokabular, normalt LoC relator codes.
+## 30. Hvorfor `wikidata_id` støttes tidlig, men generell identifikatorstruktur utsettes
+
+Prosjektet ønsker å støtte minst én praktisk ekstern identifikator i fase 1, og `wikidata_id` er valgt som den viktigste.
+
+Dette gir en nyttig kobling mot et bredt eksternt økosystem uten å kreve at hele modellen fra start bygges rundt omfattende identifikator- og URI-strukturer.
+
+Samtidig er mer generell identifikatorstruktur utsatt fordi den lett kan trekke med seg:
+- flere felter
+- uklare prioriteringer
+- større autoritetsarbeid
+- behov for mer omfattende governance
+
+Dette er derfor et eksempel på selektiv tidlig støtte heller enn full identifikatorstrategi.
+
+
+---
+
+## 31. Hvorfor VIAF er utsatt
+
+At `viaf_id` ikke er med som eget fase-1-felt, betyr ikke at VIAF er uviktig.
+
+Det betyr at prosjektet ikke ønsker å låse fase 1 til en bredere identifikatorstrategi før det faktisk er nødvendig.
+
+Dette gir en strammere start og mindre modellstøy.
+
+Samtidig holdes muligheten åpen for at VIAF eller andre identifikatorer kan komme senere når behovet er tydeligere.
+
+
+---
+
+## 32. Hvorfor kontrollerte koder prioriteres før direkte eksterne URI-er
+
+Prosjektet har valgt å bruke stabile lokale koder i fase 1 for sentrale semantiske kategorier.
+
+Dette gjelder blant annet:
+- roller
+- relasjonstyper
+- expression_type
+- series_type
+- sjanger
+- appellfaktorer
+
+Dette valget gjør fase 1 enklere å kontrollere og lettere å få konsistent.
+
+Samtidig bevarer det en viktig linked-data-retning, fordi kodene er ment å kunne mappes entydig til eksterne vokabularer senere.
+
+Dette er en mellomposisjon mellom:
+- helt lokal semantikk uten interoperabilitet
+- full URI-basert modell fra første dag
+
+Prosjektet har vurdert denne mellomposisjonen som mest realistisk og mest robust i tidlig fase.
+
+
+---
+
+## 33. Hvorfor workflow-felter er utsatt fra kjernemodellen
+
+Prosjektet ser et sannsynlig framtidig behov for arbeidsflyt knyttet til:
+- staging
+- verifisering
+- låsing
+- kvalitetssikring
+- intern redigering
+
+Likevel er slike workflow-felter holdt utenfor fase-1-kjernen.
+
+Grunnen er at disse feltene tilhører arbeidsprosess og styring av datainnhenting, ikke den bibliografiske kjernemodellen.
+
+Å holde dette utenfor kjernen gir:
+- tydeligere bibliografisk modell
+- mindre risiko for at arbeidsflytlogikk griper inn i grunnstrukturen
+- lettere framtidig skille mellom datalag og arbeidsflater
+
+Dette betyr ikke at slike behov er små. Tvert imot kan de bli viktige senere. Men prosjektet ønsker ikke å la dem definere kjernemodellen for tidlig.
+
+
+---
+
+## 34. Lagdelt kildestrategi som designretning
+
+Prosjektet ser for seg en framtidig lagdelt kildestrategi.
+
+Tanken er at data i systemet over tid kan komme fra flere nivåer, for eksempel:
+- importerte bibliografiske grunnposter
+- lokale kuraterte tilføyninger
+- autoritetsnære koblinger
+- formidlings- og navigasjonslag
+
+Dette er ikke ferdig implementert modellarkitektur i fase 1.
+
+Det er en designretning som påvirker hvordan modellen tenkes:
+- kjernen bør være stabil
+- senere lag bør kunne legges til uten å bryte kjernen
+- systemet bør tåle at ulike datatyper har ulik grad av autoritet og kuratering
+
+Denne retningen er viktig for å forstå hvorfor modellen både er stram i kjernen og åpen i periferien.
+
+
+---
+
+## 35. Staging som framtidig arbeidslag
+
+Staging er ikke en del av den normative fase-1-modellen, men framstår som en sannsynlig framtidig komponent.
+
+Et framtidig staging-lag kan være relevant for:
+- import og mellomlagring
+- kvalitetssikring før publisering
+- sammenstilling av data fra flere kilder
+- kontroll før noe blir del av den operative katalogstrukturen
+
+Dette er viktig fordi prosjektet trolig ikke bare skal håndtere manuelt registrerte data, men også mer sammensatte dataløp over tid.
+
+At staging ikke er med nå, betyr derfor ikke at tanken er forlatt. Den er bare holdt utenfor kjernemodellen.
+
+
+---
+
+## 36. Offentlig portal og administrativ flate som ulike behov
+
+Prosjektet peker mot et framtidig skille mellom minst to ulike brukerflater:
+- en offentlig portal for utforsking, søk og formidling
+- en administrativ flate for registrering, kvalitetssikring og intern kontroll
+
+Dette skillet er viktig fordi de to flatene har ulike behov:
+- offentlig portal trenger god navigasjon, relasjonsvisning og formidling
+- administrativ flate trenger presisjon, kontroll og arbeidsflyt
+
+Modellen prøver å være et felles fundament for begge, uten at én av flatene helt får definere strukturen alene.
+
+
+---
+
+## 37. Det “levende biblioteket” som produktidé
+
+Tanken om et “levende bibliotek” er en viktig produktidé i prosjektet.
+
+Med dette menes et bibliotek som ikke bare presenterer statiske katalogposter, men som gjør det mulig å bevege seg gjennom forbindelser som:
+- relaterte verk
+- serier
+- karakterer
+- sjanger
+- appellfaktorer
+- ulike uttrykk og utgaver
+
+Denne idéen forklarer mye av prosjektets vilje til å modellere flere relasjonstyper og navigerbare entiteter allerede i fase 1, selv når enklere løsninger kunne vært valgt.
+
+Det er likevel viktig å forstå at dette foreløpig er en designretning og produktvisjon, ikke en ferdig implementert funksjonalitet.
+
+
+---
+
+## 38. Hvorfor fase 1 bevisst holder igjen enkelte ting
+
+Flere ting er bevisst utsatt i fase 1:
+- generell identifikatorstruktur
+- rike autoritetsdata
+- variantnavn flere steder
+- synonymstruktur
+- mer avansert relasjonsmetadata
+- workflow-felter
+- sirkulasjonslogikk
+- mer detaljerte koblingstyper i noen koblingstabeller
+
+Dette er ikke tilfeldig.
+
+Prosjektet prøver å gjøre fase 1 smal nok til å være gjennomførbar, men rik nok til at videre utvikling ikke krever at grunnmodellen veltes.
+
+Med andre ord:
+fase 1 er ikke “minimum mulig modell”, men en selektivt beskyttet kjerne.
+
+
+---
+
+## 39. Hva slags type prosjekt dette egentlig er
+
+Krimbiblioteket er ikke bare et katalogprosjekt og ikke bare et formidlingsprosjekt.
+
+Det er et hybridprosjekt som prøver å kombinere:
+- bibliografisk presisjon
+- kuratert modellering
+- framtidig navigasjon og utforsking
+- gradvis utvidbarhet
+
+Denne prosjektkarakteren er viktig å ha med seg når man vurderer modellvalg. Mange valg som kan virke “for store” for en enkel katalog, gir mer mening når målet også er å bygge grunnlag for et rikere litterært og formidlingsorientert system.
+
+
+---
+
+## 40. Hvordan dette dokumentet bør brukes videre
+
+Dette dokumentet bør brukes når prosjektet trenger å:
+- forklare hvorfor et valg ble tatt
+- bevare resonnement som ikke bør ligge i ADR eller invariants
+- skille mellom fase-1-kjerne og framtidig retning
+- dokumentere hva modellen prøver å beskytte på lengre sikt
+
+Det bør ikke brukes som eneste sannhetskilde for konkrete modellregler.
+
+Hvis noe i dette dokumentet kommer i konflikt med:
+- `ADR.md`
+- `model_invariants.md`
+- `modelling_rules_phase1.md`
+
+skal de normative dokumentene ha forrang.
