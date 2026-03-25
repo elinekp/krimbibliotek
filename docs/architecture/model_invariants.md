@@ -1,642 +1,554 @@
 # Model Invariants — Krimbiblioteket
 
-Dette dokumentet beskriver grunnleggende regler i datamodellen som ikke skal brytes av applikasjonslogikk, migrasjoner eller fremtidige utvidelser.
+Dette dokumentet beskriver harde modellregler for datamodellen i Krimbiblioteket.
 
-Formålet er å beskytte modellens struktur over tid.
+Invariants i dette dokumentet skal ikke brytes av applikasjonslogikk, migrasjoner, importløp eller senere utvidelser uten at det er tatt en eksplisitt arkitekturbeslutning.
 
-Disse reglene er mer stabile enn vanlig dokumentasjon og bør bare endres dersom arkitekturen endres eksplisitt.
+Dokumentet beskriver:
+- strukturelle regler
+- kardinalitet
+- XOR-regler
+- unike kombinasjoner
+- nivåplassering som er frosset i fase 1
+
+Dokumentet beskriver ikke:
+- begrunnelser og designresonnement
+- praktiske katalogiseringsregler
+- roadmap, neste steg eller prosjektstatus
+
 
 ---
 
-# 1. WEMI-strukturen er grunnlaget for systemet
+## 1. WEMI-strukturen er grunnlaget for modellen
 
-Datamodellen følger strukturen:
+Datamodellen bygger på WEMI-strukturen:
 
 `Work → Expression → Manifestation → Item`
 
-Betydning:
+Dette betyr:
+- `Work` representerer verkets abstrakte/intellektuelle nivå
+- `Expression` representerer realiseringen av et verk
+- `Manifestation` representerer den konkrete utgaven
+- `Item` representerer det individuelle eksemplaret
 
-- `Work` representerer den abstrakte ideen bak et verk
-- `Expression` representerer realiseringen (tekst, lyd, film osv.)
-- `Manifestation` representerer den konkrete publiserte utgaven
-- `Item` representerer det individuelle eksemplaret i samlingen
-
-Ingen entiteter skal hoppe over nivåer i denne strukturen.
+Ingen entiteter skal hoppe over nivåer i denne kjernen.
 
 Ikke tillatt:
+- direkte modellering av `Work → Manifestation` som erstatning for `Expression`
+- direkte modellering av `Work → Item`
+- direkte modellering av `Expression → Item`
 
-- `Work → Manifestation`
-- `Work → Item`
-
-Tillatt:
-
-- `Work → Expression → Manifestation → Item`
 
 ---
 
-# 2. Work kan eksistere uten Expression
+## 2. Work kan eksistere uten Expression
 
-Kardinaliteten er:
+Kardinalitet:
+- `Work → 0..n Expression`
+- `Expression → 1 Work`
 
-`Work → 0..n Expression`  
-`Expression → 1 Work`
+Regel:
+- Et `Work` kan eksistere uten noen registrert `Expression`
+- En `Expression` kan ikke eksistere uten å tilhøre nøyaktig ett `Work`
 
-Et `Work` kan eksistere uten `Expression`, men en `Expression` kan ikke eksistere uten et `Work`.
-
----
-
-# 3. Manifestation må alltid tilhøre en Expression
-
-Kardinaliteten er:
-
-`Expression → 0..n Manifestation`  
-`Manifestation → 1 Expression`
-
-En `Manifestation` kan ikke eksistere uten en `Expression`.
 
 ---
 
-# 4. Item må alltid tilhøre en Manifestation
+## 3. Expression–Manifestation modelleres som M2M via ExpressionManifestation
 
-Kardinaliteten er:
+Relasjonen mellom `Expression` og `Manifestation` modelleres gjennom en eksplisitt koblingstabell:
 
-`Manifestation → 0..n Item`  
-`Item → 1 Manifestation`
+`ExpressionManifestation`
 
-Et `Item` kan ikke eksistere uten en `Manifestation`.
+Kardinalitet:
+- `Expression → 0..n ExpressionManifestation`
+- `Manifestation → 1..n ExpressionManifestation`
+
+Regler:
+- En `Manifestation` kan ikke eksistere uten minst én kobling til `Expression` via `ExpressionManifestation`
+- En `Expression` kan forekomme i flere `Manifestations`
+- En `Manifestation` kan kobles til flere `Expressions`
+- Direkte 1:M-modell mellom `Expression` og `Manifestation` skal ikke brukes som gjeldende hovedstruktur i databasen
+
+Normalmønsteret i praksis kan ofte være:
+- én `Manifestation` til én `Expression`
+- én `Expression` til flere `Manifestations`
+
+Dette endrer ikke den formelle modellinvarianten: relasjonen er M2M
+
 
 ---
 
-# Contribution på Item brukes for proveniens, ikke sirkulasjon
+## 4. ExpressionManifestation er en eksplisitt koblingstabell med egen identitet
 
-Når `Contribution` brukes på `Item` i fase 1, gjelder dette strukturert proveniens og copy-specific agentrelasjoner, for eksempel:
+`ExpressionManifestation` er en egen tabell i modellen.
 
+Regler:
+- tabellen skal ha egen `id`
+- hver rad skal koble nøyaktig én `expression` og nøyaktig én `manifestation`
+- samme kombinasjon av `expression` og `manifestation` kan ikke registreres flere ganger
+
+Unik regel:
+- unik per (`expression`, `manifestation`)
+
+
+---
+
+## 5. ExpressionManifestation bruker primærkobling med maksimum én primær per Manifestation
+
+`ExpressionManifestation` har i fase 1 feltet:
+
+- `is_primary`
+
+Regler:
+- en `Manifestation` kan ha maks én primærkobling
+- flere primærkoblinger for samme `Manifestation` er ikke tillatt
+- det er tillatt at en `Manifestation` ikke har primærkobling
+
+Dette betyr:
+- vanlige utgaver skal normalt ha én primærkobling
+- antologier og enkelte samleutgaver kan ha ingen primærkobling
+
+Databasekrav:
+- det skal ikke være mulig å registrere mer enn én rad med `is_primary = true` for samme `manifestation`
+
+
+---
+
+## 6. Item må alltid tilhøre én Manifestation
+
+Kardinalitet:
+- `Manifestation → 0..n Item`
+- `Item → 1 Manifestation`
+
+Regel:
+- Et `Item` kan ikke eksistere uten å tilhøre nøyaktig én `Manifestation`
+
+
+---
+
+## 7. Hovedentiteter bruker UUID som primærnøkkel
+
+Hovedentiteter i modellen bruker UUID som primærnøkkel.
+
+Dette gjelder minst:
+- `Work`
+- `Expression`
+- `Manifestation`
+- `Item`
+- `Series`
+- `SeriesMembership`
+- `Character`
+- `WorkCharacter`
+- `WorkRelationship`
+- `Agent`
+- `Contribution`
+- `ExpressionManifestation`
+- `WorkGenre`
+- `WorkAppealFactor`
+
+Regel:
+- primærnøkler på disse entitetene skal ikke erstattes av auto-increment som hovedidentitet
+
+Unntak:
+- kontrollerte vokabularentiteter kan bruke stabile koder som primær identitet der dette er besluttet, for eksempel `Role`, `Genre` og `AppealFactor`
+
+
+---
+
+## 8. Kontrollerte semantiske kategorier representeres med stabile lokale koder
+
+I fase 1 skal kontrollerte semantiske kategorier representeres med stabile lokale koder.
+
+Dette gjelder blant annet:
+- `expression_type`
+- `series_type`
+- `relation_type`
+- `Role.code`
+- `Genre.code`
+- `AppealFactor.code`
+
+Regler:
+- modellen skal ikke basere slike semantiske kategorier på ukontrollert fritekst
+- kodene skal være stabile over tid
+- kodene skal kunne mappes entydig til relevante eksterne vokabularer senere
+
+
+---
+
+## 9. Eksterne URI-er lagres normalt ikke direkte i operative tabeller i fase 1
+
+Regel:
+- operative tabeller i fase 1 skal normalt ikke være avhengige av direkte lagring av eksterne URI-er som bærende modellmekanisme
+
+Dette utelukker ikke eksplisitt støtte for enkelte identifikatorfelt der dette er besluttet.
+
+Eksempel:
+- `wikidata_id` er støttet i fase 1 der dette er definert
+- generell URI-basert identifikatorstruktur er ikke en invariant i fase 1
+
+
+---
+
+## 10. Agent er egen entitet for personer og organisasjoner
+
+`Agent` er en egen entitet i modellen.
+
+Regler:
+- `Agent` brukes for både personer og organisasjoner
+- `Agent` skal ha `id`, `name` og `agent_type`
+- `agent_type` er obligatorisk og kontrollert
+- `wikidata_id` er tillatt som fase-1-identifikator
+- roller skal ikke ligge direkte på `Agent`
+
+Konsekvens:
+- rolle uttrykkes i relasjon, ikke som attributt på agenten
+
+
+---
+
+## 11. Role er egen kontrollert entitet
+
+`Role` er egen entitet for kontrollerte agentroller.
+
+Regler:
+- `Role` brukes sammen med `Contribution`
+- `Role` ligger ikke direkte på `Agent`
+- `Role` skal ha:
+  - `code`
+  - `label`
+- `code` er stabil lokal kode og fungerer som primær identitet for rollen
+
+
+---
+
+## 12. Contribution modellerer agentroller eksplisitt
+
+`Contribution` er koblingstabellen for agentroller i modellen.
+
+Regler:
+- `Contribution` kobler én `Agent` til nøyaktig én målentitet og én rolle
+- `agent` er obligatorisk
+- `role` er obligatorisk
+
+I fase 1 kan `Contribution` kobles til nøyaktig én av:
+- `work`
+- `expression`
+- `manifestation`
+- `item`
+
+
+---
+
+## 13. Contribution har XOR-regel for målentitet
+
+For hver rad i `Contribution` gjelder:
+
+- nøyaktig én av `work`, `expression`, `manifestation` eller `item` skal være satt
+- flere målentiteter samtidig er ikke tillatt
+- ingen målentitet er heller ikke tillatt
+
+Dette er en hard XOR-regel og skal håndheves teknisk
+
+
+---
+
+## 14. Contribution skal være unik per målentitet + agent + rolle
+
+Samme agent skal ikke kunne registreres flere ganger med samme rolle mot samme målentitet.
+
+Unik regel:
+- samme kombinasjon av målentitet + `agent` + `role` kan ikke registreres flere ganger
+
+Dette gjelder uansett hvilket nivå målentiteten ligger på
+
+
+---
+
+## 15. Contribution på Item brukes for strukturert proveniens, ikke sirkulasjon
+
+Når `Contribution` brukes på `Item` i fase 1, gjelder dette copy-specific relasjoner som:
 - tidligere eier
 - giver
 - annen navngitt proveniensaktør
 
-Aktiv låner, utlånshistorikk og annen sirkulasjonslogikk skal ikke modelleres gjennom `Contribution` i fase 1.
+Regel:
+- `Contribution` på `Item` skal ikke brukes for aktiv låner, utlånshistorikk eller annen sirkulasjonslogikk i fase 1
+
 
 ---
 
-# 5. Alle hovedentiteter bruker UUID som primærnøkkel
+## 16. Series er egen entitet med kontrollert series_type
 
-Dette gjelder blant annet:
+`Series` er egen entitet i modellen.
 
-- `Work`
-- `Expression`
-- `Manifestation`
-- `Item`
-- `Agent`
-- `Character`
-- `Series`
-- `Contribution`
-- `WorkRelationship`
+Regler:
+- hver `Series` skal ha egen `id`
+- `series_type` er obligatorisk
+- `series_type` er kontrollert kode
 
-Formålet er å sikre stabile identifikatorer uavhengig av databaseinstans eller datamigrasjoner.
+I fase 1 er følgende serietyper gyldige:
+- `narrative`
+- `publisher_series`
 
----
+Andre serietyper er ikke del av fase-1-modellen
 
-# 6. Kontrollerte semantiske kategorier skal representeres med stabile koder
-
-I fase 1 skal kontrollerte typer, relasjoner, roller og andre semantiske kategorier representeres med stabile lokale koder.
-
-Slike koder skal kunne mappes entydig til relevante eksterne autoritetsregistre eller vokabularer der dette er faglig relevant.
-
-Dette gjelder blant annet:
-
-- `language_code`
-- `expression_type`
-- `series_type`
-- `relation_type`
-- rollekoder i `Role`
-
-Modellen skal ikke bygges på fritekst der semantikken bør være kontrollert.
 
 ---
 
-# 7. Agent er en egen entitet for personer og organisasjoner
+## 17. SeriesMembership er eksplisitt koblingstabell mellom Series og enten Work eller Manifestation
 
-`Agent` er en egen entitet i modellen.
+`SeriesMembership` er egen koblingstabell.
 
-I fase 1 brukes `Agent` for både:
+Regler:
+- hver rad skal koble én `Series` til enten ett `Work` eller én `Manifestation`
+- tabellen skal ha egen `id`
 
-- personer
-- organisasjoner
+Dette innebærer:
+- medlemskapet ligger på `Work`-nivå for narrative serier
+- medlemskapet ligger på `Manifestation`-nivå for forlagsserier
 
-`Agent` skal ha:
 
+---
+
+## 18. SeriesMembership har XOR-regel mellom Work og Manifestation
+
+For hver rad i `SeriesMembership` gjelder:
+
+- nøyaktig én av `work` eller `manifestation` skal være satt
+- begge samtidig er ikke tillatt
+- begge tomme er ikke tillatt
+
+Dette er en hard XOR-regel og skal håndheves teknisk
+
+
+---
+
+## 19. SeriesMembership skal være unikt per serie og målentitet
+
+Duplikatkoblinger er ikke tillatt.
+
+Unike regler:
+- samme kombinasjon av `series` og `work` kan ikke registreres flere ganger
+- samme kombinasjon av `series` og `manifestation` kan ikke registreres flere ganger
+
+
+---
+
+## 20. Character er egen Work-nivåentitet
+
+`Character` er egen entitet i modellen.
+
+Regler:
+- karakterer hører til på `Work`-nivå
+- karakterer skal ikke kobles direkte til `Expression`
+- karakterer skal ikke kobles direkte til `Manifestation`
+- karakterer skal ikke kobles direkte til `Item`
+
+I fase 1 har `Character`:
 - `id`
 - `name`
-- `agent_type`
-- `wikidata_id`
 
-`name` representerer agentens foretrukne navn.
-
-`agent_type` er obligatorisk og kontrollert.
-
-Roller skal ikke ligge på `Agent`, men i relasjonen mellom agent og målentitet.
 
 ---
 
-8. # Contribution modellerer agentroller eksplisitt
+## 21. WorkCharacter er eksplisitt koblingstabell mellom Work og Character
 
-Bidrag modelleres gjennom entiteten `Contribution`.
+`WorkCharacter` er en eksplisitt koblingstabell.
 
-`Contribution` kobler en `Agent` til nøyaktig én målentitet og en rolle.
+Regler:
+- tabellen skal ha egen `id`
+- hver rad kobler nøyaktig ett `Work` og én `Character`
+- koblingen skal bare gå mellom `Work` og `Character`
 
-I fase 1 kan `Contribution` kobles til:
+Unik regel:
+- samme kombinasjon av `work` og `character` kan ikke registreres flere ganger
 
-- `Work`
-- `Expression`
-- `Manifestation`
-- `Item`
-
-En rad i `Contribution` skal peke til nøyaktig én av disse målentitetene.
-
-Dette er en XOR-regel og skal håndheves av databasen.
-
-`Contribution` skal ha obligatoriske felter:
-
-- `agent`
-- `role`
-
-Samme kombinasjon av målentitet + agent + rolle skal ikke registreres flere ganger.
 
 ---
 
-# 6. Relasjonspolicy i fase 1
+## 22. WorkRelationship modellerer bare Work-til-Work-relasjoner
 
-Alle relasjoner bruker:
+`WorkRelationship` er egen entitet for intellektuelle relasjoner mellom verk.
 
-`on_delete = SET_NULL`
+Regler:
+- `WorkRelationship` kobler bare `Work` til `Work`
+- relasjonen er retningsbestemt
+- `relation_type` er obligatorisk og kontrollert
+- selvrelasjon er ikke tillatt
 
-Dette beskytter mot utilsiktet kaskadesletting under utvikling og datavask.
+Unik regel:
+- samme kombinasjon av `source_work`, `target_work` og `relation_type` kan ikke registreres flere ganger
 
-Relasjonspolicyen kan revideres senere dersom praksis tilsier det.
-
----
-
-# 7. Sjanger og appellfaktorer beskriver Work
-
-Sjanger og appellfaktorer modelleres på `Work`-nivå.
-
-Dette skyldes at disse egenskapene beskriver fortellingen og ikke en bestemt utgave.
 
 ---
 
-# 8. Karakterer knyttes til Work
+## 23. Genre er kontrollert Work-taksonomi
 
-Karakterer kobles til `Work`.
+`Genre` er egen entitet i modellen.
 
-Dette gjør det mulig å:
+Regler:
+- `Genre` hører til på `Work`-nivå
+- `Genre` bruker stabile lokale koder i fase 1
+- hierarki er eksplisitt i fase 1 gjennom `parent_genre`
+- `Genre` skal ha:
+  - `code`
+  - `label`
+  - `parent_genre`
 
-- navigere biblioteket etter karakterer
-- koble karakterer på tvers av forfattere
-- modellere pastisjer og videreføringer
+`code` fungerer som stabil primær identitet for sjangeren
 
----
-
-# 9. Narrative serier knyttes til Work
-
-Serier som representerer fortellingsuniverser knyttes til `Work`.
-
-Eksempler:
-
-- Sherlock Holmes
-- Hercule Poirot
-- Harry Hole
-
-Forlagsserier knyttes derimot til `Manifestation`.
 
 ---
 
-# 10. Relasjoner mellom verk modelleres eksplisitt og retningsbestemt
+## 24. WorkGenre er eksplisitt koblingstabell mellom Work og Genre
 
-Relasjoner mellom verk modelleres gjennom entiteten `WorkRelationship`.
+`WorkGenre` er egen koblingstabell.
 
-En enkel selvrefererende M2M brukes ikke, fordi relasjonstype må lagres eksplisitt.
+Regler:
+- tabellen skal ha egen `id`
+- koblingen går bare mellom `Work` og `Genre`
+- samme kombinasjon av `work` og `genre` kan ikke registreres flere ganger
 
-`WorkRelationship` skal:
+Unik regel:
+- unik per (`work`, `genre`)
 
-- koble `Work` til `Work`
-- være retningsbestemt
-- bruke obligatorisk `relation_type`
-- ikke tillate selvrelasjon
-- ikke tillate duplikat av (`source_work`, `target_work`, `relation_type`)
-
----
-
-# 11. Grensen mellom Work og Expression styres av katalogiseringsregler
-
-Databasen implementerer strukturen, men avgjør ikke automatisk hva som er:
-
-- nytt `Work`
-- nytt `Expression`
-
-Dette defineres i dokumentet `Lokale modelleringsregler for fase 1`.
 
 ---
 
-# 12. Språk registreres på Expression
+## 25. AppealFactor er kontrollert Work-vokabular
 
-Språk registreres på `Expression`-nivå fordi oversettelser representerer nye realiseringer av et verk.
+`AppealFactor` er egen entitet i modellen.
 
-Språk kodes etter `LOC Language Vocabulary`.
+Regler:
+- `AppealFactor` hører til på `Work`-nivå
+- `AppealFactor` bruker stabile lokale koder i fase 1
+- hierarki er eksplisitt i fase 1 gjennom `parent_appeal_factor`
+- `AppealFactor` skal ha:
+  - `code`
+  - `label`
+  - `parent_appeal_factor`
+  - `definition`
+  - `scope_note`
 
-Eksempler:
+`code` fungerer som stabil primær identitet for appellfaktoren
 
-- `eng`
-- `nor`
-- `ger`
-- `fre`
-
----
-
-# 13. Realiseringstype registreres på Expression
-
-`Expression` inneholder feltet `expression_type`.
-
-Dette beskriver realiseringstypen, for eksempel:
-
-- `text`
-- `spoken_word`
-- `moving_image`
-- `still_image`
-
-`expression_type` representeres i fase 1 som en stabil lokal kode.
-
-Koden skal kunne mappes entydig til `RDA Content Type`.
 
 ---
 
-# 14. Tekst og lydbok er ulike Expressions
+## 26. WorkAppealFactor er eksplisitt koblingstabell mellom Work og AppealFactor
 
-Tekst og lydbok modelleres som separate `Expressions`, fordi de representerer ulike realiseringer av et verk.
+`WorkAppealFactor` er egen koblingstabell.
 
-Eksempel:
+Regler:
+- tabellen skal ha egen `id`
+- koblingen går bare mellom `Work` og `AppealFactor`
+- samme kombinasjon av `work` og `appeal_factor` kan ikke registreres flere ganger
 
-- `Expression (nor, text)`
-- `Expression (nor, spoken_word)`
+Unik regel:
+- unik per (`work`, `appeal_factor`)
 
----
-
-# 15. Flere Expressions med samme språk og samme realiseringstype er tillatt
-
-Datamodellen tillater flere `Expressions` innenfor samme `Work` med samme:
-
-- `language_code`
-- `expression_type`
-
-Dette håndteres gjennom lokale modelleringsregler, ikke ved streng unik constraint.
 
 ---
 
-# 16. Manifestation representerer bibliografisk identitet på utgavenivå
+## 27. Språk registreres på Expression
 
-`Manifestation` beskriver den konkrete publiserte utgaven av en `Expression`.
+Regel:
+- språk skal registreres på `Expression`-nivå
+- språk skal ikke registreres som bærende modellattributt på `Work`, `Manifestation` eller `Item`
 
-Forskjeller som følgende modelleres som ulike `Manifestations` av samme `Expression`:
+Dette følger av at språk i modellen er knyttet til verkets realisering
 
+
+---
+
+## 28. Realiseringstype registreres på Expression
+
+Regel:
+- realiseringstype registreres på `Expression`
+- `expression_type` er kontrollert kode
+- ulike realiseringstyper, som tekst og lydbok, skal kunne skilles som ulike `Expressions`
+
+
+---
+
+## 29. Flere Expressions med samme språk og samme realiseringstype er tillatt
+
+Regel:
+- modellen tillater flere `Expressions` innenfor samme `Work` med samme kombinasjon av `language_code` og `expression_type`
+
+Det skal derfor ikke finnes en hard unik constraint som forbyr dette på `Expression`-nivå
+
+
+---
+
+## 30. Manifestation representerer bibliografisk identitet på utgavenivå
+
+Regel:
+- `Manifestation` representerer utgavenivået i modellen
+- bibliografiske forskjeller på utgavenivå skal ikke presses ned på `Item`
+
+Typiske forskjeller som kan representere ulike `Manifestations`:
 - hardcover
 - paperback
 - epub
 - pdf
 
----
-
-# 17. Identifikatorer på Manifestation i fase 1
-
-Følgende sentrale identifikatorer lagres på `Manifestation` i fase 1:
-
-- `isbn`
-- `nb_sesamid`
-
-Mer generell identifikatorstruktur er utsatt.
 
 ---
 
-# 18. Forlag hører til Manifestation-nivået
+## 31. Item representerer eksemplarnivå, ikke utgavenivå
 
-Forlag modelleres på `Manifestation`-nivå og representeres fra start via `Contribution / Agent`.
+Regel:
+- `Item` representerer individuelle eksemplarer
+- copy-specific informasjon skal ligge på `Item`, ikke på `Manifestation`
+- bibliografisk utgaveinformasjon skal ikke flyttes ned til `Item`
 
-Ikke som eget tekstfelt i fase 1.
-
----
-
-# 19. Modellen er designet for å tåle følgende bibliografiske situasjoner
-
-Datamodellen skal kunne håndtere:
-
-- oversettelser
-- lydbøker
-- filmatiseringer
-- grafiske adaptasjoner
-- samlingsverk
-- antologier
-- omnibusutgaver
-- verk i flere serier
-- karakterer på tvers av forfattere
 
 ---
 
-# 20. Item representerer eksemplarnivå, ikke bibliografisk utgavenivå
+## 32. Proveniens kan ligge på Item som fritekst eller strukturert relasjon
 
-`Item` representerer det individuelle fysiske eksemplaret i samlingen.
+Regel:
+- `Item` kan bruke `provenance_notes` for enkel proveniens
+- når proveniens modelleres strukturert mot agent, skal dette gjøres gjennom `Contribution` på `Item`
 
-`Item` skal derfor brukes til eksemplarspesifikke data, ikke til bibliografiske data som beskriver utgaven som publikasjon.
+Dette endrer ikke regelen om at sirkulasjonslogikk ikke inngår i fase 1
 
-Eksempler på data som hører til `Item`:
-
-- hylleplassering
-- proveniens
-- lokale eksemplarnotater
-
-Eksempler på data som ikke hører til `Item`:
-
-- ISBN
-- `nb_sesamid`
-- utgivelsesår
-- annen utgaveinformasjon
-
-Slike data hører til `Manifestation`.
-
-Dette skillet skal ikke brytes av applikasjonslogikk, skjemaer eller senere feltutvidelser.
 
 ---
 
-# 21. Series bruker et kontrollert seriebegrep i fase 1
+## 33. Relasjonspolicy i fase 1 er SET_NULL
 
-`Series` representerer en serie som egen entitet, ikke bare et tekstfelt.
+Der fase-1-modellen bruker nullable relasjoner som del av designet, er relasjonspolicy i fase 1:
 
-I fase 1 skal `Series` ha et obligatorisk felt:
+`SET_NULL`
 
-- `series_type`
+Regel:
+- sletting av referert rad skal ikke automatisk føre til cascading sletting som bryter hovedprinsippet for fase-1-modellen, med mindre en eksplisitt arkitekturbeslutning senere endrer dette
 
-Dette feltet bruker et stramt kontrollert vokabular:
-
-- `narrative`
-- `publisher_series`
-
-`series_type` er en stabil kontrollert kode i fase 1.
-
-Dette beskytter skillet mellom:
-
-- narrative serier på `Work`-nivå
-- forlagsserier på `Manifestation`-nivå
-
-Andre serietyper og seriehierarki er utsatt til senere fase.
 
 ---
 
-# 22. SeriesMembership må peke til enten Work eller Manifestation
+## 34. Grensen mellom Work, Expression og Manifestation endres ikke av lokale enkelttilpasninger
 
-`SeriesMembership` representerer en konkret serietilknytning.
+Regel:
+- databasen skal ikke utvides ad hoc for å omgå skillet mellom `Work`, `Expression` og `Manifestation`
+- grensetilfeller håndteres gjennom modelleringsregler, ikke ved å bryte kjernestrukturen
 
-Hver rad i `SeriesMembership` skal peke til:
+Dette beskytter modellens nivådeling over tid
 
-- enten `Work`
-- eller `Manifestation`
-
-Aldri begge samtidig, og aldri ingen av dem.
-
-Dette innebærer at modellen må håndheve:
-
-- `work` satt og `manifestation` tom
-- eller `manifestation` satt og `work` tom
-
-Denne regelen skal ikke kunne brytes av applikasjonslogikk, skjemaer eller importer.
 
 ---
 
-# 23. Samme serie kan ikke registreres dobbelt mot samme mål
-
-`SeriesMembership` skal være unikt per:
-
-- (`series`, `work`)
-- (`series`, `manifestation`)
-
-Det betyr at samme serie ikke kan kobles flere ganger til samme `Work`, og heller ikke flere ganger til samme `Manifestation`.
-
-Dette er en databasebeskyttet modellregel, ikke bare en anbefalt praksis.
-
----
-
-# 24. Nummerering i SeriesMembership er valgfri
-
-`SeriesMembership` kan eksistere uten kjent eller normalisert nummerering.
-
-Derfor er:
-
-- `part_number` valgfritt
-- `part_display` valgfritt
-
-Modellen skal tåle:
-
-- serietilknytning uten nummer
-- nummerering som ikke er rent numerisk
-- ulik verdi for sortering og visning
-
----
-
-# 25. Character er en egen entitet
-
-`Character` representerer en fiktiv figur som modelleres som egen entitet i databasen.
-
-Karakterer skal ikke registreres bare som fritekst på `Work`.
-
-Dette er valgt for å støtte:
-
-- gjenbruk av samme karakter på tvers av flere verk
-- karakterbasert søk og navigasjon
-- tydelig skille mellom selve karakteren og dens koblinger til verk
-
-I fase 1 har `Character` bare følgende felter:
-
-- `id`
-- `name`
-
-Andre karakterattributter er utsatt til senere fase.
-
----
-
-# 26. Character kobles til Work
-
-Karakterer hører til `Work`-nivået i modellen.
-
-Karakterer skal ikke kobles direkte til:
-
-- `Expression`
-- `Manifestation`
-- `Item`
-
-Dette beskytter skillet mellom innholdsmessige egenskaper ved verket og uttrykks-, utgave- eller eksemplarspesifikke forhold.
-
----
-
-# 27. Koblingen mellom Work og Character går via egen koblingstabell
-
-Koblingen mellom verk og karakter modelleres gjennom en egen koblingstabell:
-
-- `WorkCharacter`
-
-Dette er nødvendig fordi:
-
-- samme verk kan ha flere karakterer
-- samme karakter kan forekomme i flere verk
-
-Modellen skal derfor støtte mange-til-mange mellom `Work` og `Character`.
-
----
-
-# 28. Samme Character kan ikke kobles flere ganger til samme Work
-
-Samme karakter skal ikke kunne registreres flere ganger mot samme verk.
-
-`WorkCharacter` skal derfor være unikt per:
-
-- (`work`, `character`)
-
-Dette er en modellregel som bør håndheves teknisk, ikke bare gjennom registreringspraksis.
-
----
-
-# 29. WorkCharacter er en eksplisitt koblingstabell mellom Work og Character
-
-Koblingen mellom `Work` og `Character` modelleres gjennom en egen tabell:
-
-- `WorkCharacter`
-
-Dette er en eksplisitt koblingsentitet i modellen, ikke bare en implisitt mange-til-mange-relasjon.
-
-Formålet er å støtte at:
-
-- ett `Work` kan ha flere `Character`
-- samme `Character` kan forekomme i flere `Work`
-
----
-
-# 30. WorkCharacter kobler bare Work og Character
-
-`WorkCharacter` skal i fase 1 bare koble:
-
-- `Work`
-- `Character`
-
-`WorkCharacter` skal ikke kobles til:
-
-- `Expression`
-- `Manifestation`
-- `Item`
-
-Dette følger av at karakterer er definert som en `Work`-nivåegenskap i modellen.
-
----
-
-# 31. WorkCharacter skal være unikt per work og character
-
-Samme kombinasjon av `work` og `character` skal ikke kunne registreres flere ganger.
-
-`WorkCharacter` skal derfor være unikt per:
-
-- (`work`, `character`)
-
-Dette er en modellregel som skal håndheves teknisk som databasekrav, ikke bare som registreringspraksis.
-
----
-
-# 32. WorkCharacter har ingen ekstra relasjonsfelter i fase 1
-
-I fase 1 har `WorkCharacter` bare følgende felter:
-
-- `id`
-- `work`
-- `character`
-
-Følgende typer relasjonsdata er utsatt til senere fase:
-
-- rolle i verket
-- visningsrekkefølge eller prioritet
-- note
-- kilde
-- usikkerhetsmarkering
-- andre metadata på relasjonen
-
----
-
-# 33. Agent er en egen entitet for personer og organisasjoner
-
-`Agent` er en egen entitet i modellen.
-
-I fase 1 brukes `Agent` for både:
-
-- personer
-- organisasjoner
-
-`Agent` skal ha:
-
-- `id`
-- `name`
-- `agent_type`
-- `wikidata_id`
-
-`name` representerer agentens foretrukne navn.
-
-`agent_type` er obligatorisk og kontrollert.
-
-Roller skal ikke ligge på `Agent`, men i relasjonen mellom agent og målentitet.
-
---
-
-# 34. Role er en egen kontrollert entitet
-
-Roller modelleres gjennom entiteten `Role`.
-
-`Role` brukes i `Contribution` og ligger ikke direkte på `Agent`.
-
-I fase 1 skal `Role` ha:
-
-- `code`
-- `label`
-
-`code` er den stabile lokale, standardnære identifikatoren for rollen og fungerer som primærnøkkel.
-
-Roller skal kunne mappes entydig til relevant eksternt vokabular der dette er faglig relevant, normalt LoC relator codes.
-
----
-
-# 35. Contribution modellerer agentroller eksplisitt
-
-Bidrag modelleres gjennom entiteten `Contribution`.
-
-`Contribution` kobler en `Agent` til nøyaktig én målentitet og en rolle.
-
-I fase 1 kan `Contribution` kobles til:
-
-- `Work`
-- `Expression`
-- `Manifestation`
-- `Item`
-
-En rad i `Contribution` skal peke til nøyaktig én av disse målentitetene.
-
-Dette er en XOR-regel og skal håndheves av databasen.
-
-`Contribution` skal ha obligatoriske felter:
-
-- `agent`
-- `role`
-
-Samme kombinasjon av målentitet + agent + rolle skal ikke registreres flere ganger.
-
----
-
-## Bruk av dette dokumentet
-
-Dette dokumentet fungerer som en referanse for utvikling og migrasjoner.
-
-Før større modellendringer bør følgende spørsmål stilles:
-
-> Bryter denne endringen en modell-invariant?
-
-Hvis svaret er ja, må beslutningen vurderes som en arkitekturendring.
+## 35. Endring av en invariant krever eksplisitt arkitekturbeslutning
+
+Hvis en foreslått modellendring:
+- endrer nivåplassering
+- bryter en kardinalitetsregel
+- bryter en XOR-regel
+- opphever en unik kombinasjon
+- endrer den grunnleggende WEMI-strukturen
+- endrer rollen til en kontrollert entitet
+
+da skal dette behandles som en arkitekturendring, ikke som en lokal dokumentjustering.
