@@ -101,16 +101,24 @@ Ulemper:
 
 ### Context
 
-Bibliografiske relasjoner mellom personer og verk kan være mange:
+Bibliografiske og samlingsrelaterte relasjoner mellom aktører og entiteter kan være mange og ligge på ulike nivåer i modellen.
 
-* forfatter
-* oversetter
-* illustratør
-* innleser
-* redaktør
-* forlag
+Eksempler:
 
-En modell med separate felter for hver rolle ville blitt lite fleksibel.
+- forfatter på `Work`
+- oversetter på `Expression`
+- innleser på `Expression`
+- forlag på `Manifestation`
+- tidligere eier eller giver på `Item`
+
+En modell med separate felter for hver rolle ville blitt lite fleksibel og vanskelig å utvide.
+
+Det måtte også avklares:
+
+- om `Agent` skal være egen entitet
+- om samme `Agent`-modell skal brukes for både personer og organisasjoner
+- hvordan `Contribution` skal kobles til flere nivåer i WEMI-strukturen
+- hvordan databasen skal hindre ugyldige eller dupliserte bidrag
 
 ### Decision
 
@@ -121,27 +129,86 @@ Agent
 Role
 Contribution
 ```
+**Agent**
 
-Contribution kan kobles til:
+Agent er en egen entitet og brukes i fase 1 for både:
 
-* Work
-* Expression
-* Manifestation
-* Item
+- personer
+- organisasjoner
 
-Roller skal representeres med stabile lokale koder med entydig mapping til relevante rollevokabular.
+Agent har i fase 1 følgende felter:
+
+- id
+- name
+- agent_type
+- wikidata_id
+
+name forstås som **foretrukket navn.**
+
+agent_type er obligatorisk og bruker et kontrollert vokabular. I fase 1 brukes minst:
+
+- person
+- organization
+
+wikidata_id er valgfritt, men modellen skal støtte minst én ekstern identifikator i fase 1.
+
+Roller ligger ikke på Agent, men i relasjonen mellom agenten og det agenten bidrar til.
+
+**Contribution**
+Contribution er en egen koblingstabell mellom:
+
+- Agent
+- en målentitet
+- en rolle
+
+I fase 1 kan Contribution kobles til:
+
+- Work
+- Expression
+- Manifestation
+- Item
+
+Én rad i Contribution skal peke til nøyaktig én av disse målentitetene.
+
+I fase 1 har Contribution følgende felter:
+
+- id
+- agent
+- work
+- expression
+- manifestation
+- item
+- role
+
+agent er obligatorisk.
+
+role er obligatorisk og skal være en kontrollert kode.
+
+Samme agent kan ha flere ulike roller mot samme entitet, men samme kombinasjon av målentitet + agent + rolle skal ikke registreres flere ganger.
+
+Når Contribution brukes på Item, er dette i fase 1 primært for strukturert proveniens, for eksempel:
+
+- tidligere eier
+- giver
+- annen navngitt proveniensaktør
+
+Aktiv låner, utlånshistorikk og annen sirkulasjonslogikk modelleres ikke gjennom Contribution i fase 1.
 
 ### Consequences
 
 Fordeler:
 
-* fleksibel rollemodell
-* kompatibel med RDA/Relator codes
-* enkel utvidelse
+- én konsistent modell for bidrag på tvers av nivåer
+- roller knyttes til relasjonen, ikke feilaktig til agenten alene
+- støtter både personer og organisasjoner
+- støtter strukturert proveniens på Item når det gir merverdi
+- kompatibelt med kontrollert rollemodell og senere linked-data-mapping
 
 Ulemper:
 
-* mer kompleks spørring
+- mer kompleks spørring enn egne rollefelter
+- flere nullable mål-felter i Contribution
+- krever tydelige modelleringsregler for bruk av roller og Item-bidrag
 
 ---
 
