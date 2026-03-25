@@ -213,7 +213,9 @@ I fase 1 håndteres proveniens normalt gjennom feltet:
 
 Dette er valgt for å holde registreringen enkel i første fase.
 
-Samtidig åpner modellen for at `Contribution` også kan kobles til `Item` når proveniens eller eierskap er viktig nok til å struktureres, for eksempel ved navngitte tidligere eiere eller givere.
+Samtidig åpner modellen for at `Contribution` også kan kobles til `Item` når proveniens eller annen copy-specific agentrelasjon er viktig nok til å struktureres, for eksempel ved navngitte tidligere eiere eller givere.
+
+Dette gjelder ikke aktiv låner, utlånshistorikk eller annen sirkulasjonslogikk i fase 1.
 
 Valget i fase 1 er derfor:
 
@@ -627,3 +629,122 @@ Derfor håndheves unikhet for:
 - (`source_work`, `target_work`, `relation_type`)
 
 I tillegg skal et verk ikke kunne stå i relasjon til seg selv i samme rad.
+
+# Hvorfor Agent modelleres som egen entitet
+
+Dette notatet dokumenterer hvorfor `Agent` er modellert som egen entitet i fase 1.
+
+## Hvorfor Agent er en egen tabell
+
+Aktører forekommer på tvers av flere nivåer i modellen.
+
+Eksempler:
+
+- forfatter på `Work`
+- oversetter på `Expression`
+- innleser på `Expression`
+- forlag på `Manifestation`
+- tidligere eier eller giver på `Item`
+
+Dersom navn på slike aktører bare ble lagret direkte i ulike tabeller eller rollefelt, ville modellen blitt inkonsistent og vanskelig å utvide.
+
+Prosjektet modellerer derfor `Agent` som en egen, gjenbrukbar entitet.
+
+## Hvorfor Agent brukes for både person og organisasjon
+
+I fase 1 brukes samme `Agent`-modell for både:
+
+- personer
+- organisasjoner
+
+Dette gir en enklere og mer samlet modell enn å splitte tidlig i egne tabeller for person og korporasjon.
+
+For å unngå uklarhet må `Agent` ha et obligatorisk felt:
+
+- `agent_type`
+
+I fase 1 brukes minst verdiene:
+
+- `person`
+- `organization`
+
+## Hvorfor name forstås som foretrukket navn
+
+I fase 1 lagres ett navn direkte på `Agent`.
+
+Dette feltet forstås som agentens foretrukne navn.
+
+Valget gjør fase-1-modellen enkel, samtidig som det holder åpent for senere utvidelser med:
+
+- variantnavn
+- pseudonymer
+- mer full autoritetsstruktur
+
+## Hvorfor wikidata_id tas med fra start
+
+Prosjektet ønsker å støtte minst én ekstern identifikator på `Agent` i fase 1.
+
+Valget faller på:
+
+- `wikidata_id`
+
+Dette gir en enkel, men nyttig kobling til ekstern identitet uten å innføre full generell identifikatorstruktur allerede nå.
+
+# Hvorfor Contribution modelleres som egen koblingstabell
+
+Dette notatet dokumenterer hvorfor `Contribution` er modellert som egen koblingstabell i fase 1.
+
+## Hvorfor rollen ligger i relasjonen
+
+En agent er ikke "forfatter" eller "oversetter" i seg selv.
+
+Rollen oppstår i forhold til noe bestemt.
+
+Derfor legges rollen i relasjonen mellom agent og målentitet, ikke på `Agent`.
+
+## Hvorfor Contribution kobles til flere nivåer
+
+Prosjektet trenger én samlet modell for agentroller på tvers av flere nivåer.
+
+I fase 1 kan `Contribution` kobles til:
+
+- `Work`
+- `Expression`
+- `Manifestation`
+- `Item`
+
+Dette gjør det mulig å modellere blant annet:
+
+- forfatter på verk
+- oversetter og innleser på expression
+- forlag på manifestation
+- navngitt proveniens på item
+
+## Hvorfor Contribution bruker XOR-struktur
+
+`Contribution` har ett mulig felt per støttet målentitet:
+
+- `work`
+- `expression`
+- `manifestation`
+- `item`
+
+Én rad skal peke til nøyaktig én av disse.
+
+Dette gir flere tomme felt per rad, men gir samtidig:
+
+- tydeligere modell
+- ekte fremmednøkler
+- sterkere databaseintegritet
+- mindre risiko for feil enn en polymorf target_type/target_id-løsning
+
+## Hvorfor Item-bidrag avgrenses i fase 1
+
+Når `Contribution` brukes på `Item`, er dette i fase 1 ment for strukturert proveniens og andre copy-specific agentrelasjoner.
+
+Eksempler:
+
+- tidligere eier
+- giver
+
+Aktiv utlånshåndtering og annen sirkulasjonslogikk modelleres ikke her i fase 1.
