@@ -748,3 +748,39 @@ Eksempler:
 - giver
 
 Aktiv utlånshåndtering og annen sirkulasjonslogikk modelleres ikke her i fase 1.
+
+# Hvorfor Role modelleres som egen entitet
+
+En agent har ikke én fast rolle i modellen.
+
+Samme agent kan være:
+
+- forfatter av ett verk
+- oversetter av en expression
+- forlag på en manifestation
+- tidligere eier av et item
+
+Derfor kan ikke rolle ligge på `Agent`.
+
+Rollen må ligge i relasjonen mellom agent og målentitet.
+
+Prosjektet bruker `Contribution` til å koble agenter til ulike nivåer i modellen.
+
+Dette krever et kontrollert rolle-vokabular.
+
+I stedet for fritekst eller løse etiketter modelleres dette som en egen entitet:
+
+`Role`
+
+I fase 1 brukes:
+
+- `code` som stabil lokal, standardnær identifikator
+- `label` som menneskelesbar visningstekst
+
+Dette gjør det mulig å holde intern identitet stabil selv om visningsetiketter senere må justeres.
+
+Prosjektet ønsker linked-data-beredskap uten å kreve at alle eksterne URI-er lagres direkte i operative tabeller.
+
+Derfor brukes stabile lokale rollekoder i fase 1.
+
+Disse skal kunne mappes entydig til relevant eksternt vokabular, normalt LoC relator codes.

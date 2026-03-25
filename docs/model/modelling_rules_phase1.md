@@ -639,6 +639,63 @@ Dette er ikke bare en anbefalt praksis, men en regel som skal håndheves teknisk
 
 ---
 
+## Overordnet prinsipp for kontrollerte koder
+
+I fase 1 skal kontrollerte typer, relasjoner, roller og andre semantiske kategorier registreres med stabile lokale koder.
+
+Kodene skal kunne mappes entydig til relevante autoritetsregistre eller vokabularer der dette er faglig relevant.
+
+Dette gjelder blant annet:
+
+- språk
+- realiseringstype
+- serietyper
+- verkrelasjonstyper
+- agentroller
+
+I fase 1 brukes normalt ikke eksterne URI-er direkte i de operative tabellene.
+
+I stedet brukes stabile lokale koder med entydig mapping i vokabular- eller regelverket.
+
+---
+
+## Role i fase 1
+
+### Hva Role representerer
+
+`Role` er kontrollert vokabular for agentroller i modellen.
+
+`Role` brukes sammen med `Contribution` for å uttrykke hvilken rolle en `Agent` har i forhold til en målentitet.
+
+### Fase-1-felter på Role
+
+`Role` har i fase 1:
+
+- `code`
+- `label`
+
+### Code
+
+`code` er rollens stabile lokale, standardnære kode.
+
+Det er denne verdien som fungerer som primær identifikator i modellen.
+
+Koden skal kunne mappes entydig til relevant eksternt rolle-vokabular, normalt LoC relator codes, eller annet passende register når det er mer relevant.
+
+### Label
+
+`label` er menneskelesbar visningstekst.
+
+I fase 1 brukes én enkel `label`.
+
+### Prinsipp for rollebruk
+
+Roller skal registreres konsistent og med så presise koder som nødvendig.
+
+Det er ikke ønskelig å bruke fritekst eller lokale frie formuleringer i stedet for kontrollerte roller.
+
+---
+
 ### Hva som ikke gjøres i fase 1
 
 Fase 1 inkluderer ikke ekstra relasjonsfelter på `WorkCharacter`.
