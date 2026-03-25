@@ -117,7 +117,8 @@ Det måtte også avklares:
 
 - om `Agent` skal være egen entitet
 - om samme `Agent`-modell skal brukes for både personer og organisasjoner
-- hvordan `Contribution` skal kobles til flere nivåer i WEMI-strukturen
+- hvordan `Contribution` skal kobles til flere nivåer i modellen
+- hvordan `Role` skal modelleres
 - hvordan databasen skal hindre ugyldige eller dupliserte bidrag
 
 ### Decision
@@ -152,6 +153,19 @@ agent_type er obligatorisk og bruker et kontrollert vokabular. I fase 1 brukes m
 
 wikidata_id er valgfritt, men modellen skal støtte minst én ekstern identifikator i fase 1.
 
+**Role**
+
+Role er kontrollert vokabular for agentroller i modellen.
+
+Role har i fase 1:
+
+- code
+- label
+
+code er primærnøkkel og representerer en stabil lokal, standardnær rollekode.
+
+Kodene skal kunne mappes entydig til relevant eksternt vokabular, normalt LoC relator codes.
+
 Roller ligger ikke på Agent, men i relasjonen mellom agenten og det agenten bidrar til.
 
 **Contribution**
@@ -182,7 +196,7 @@ I fase 1 har Contribution følgende felter:
 
 agent er obligatorisk.
 
-role er obligatorisk og skal være en kontrollert kode.
+role er obligatorisk og peker til Role.
 
 Samme agent kan ha flere ulike roller mot samme entitet, men samme kombinasjon av målentitet + agent + rolle skal ikke registreres flere ganger.
 
@@ -1068,6 +1082,68 @@ Ulemper
 - krever strengere vokabularforvaltning
 - krever at lokale koder holdes stabile over tid
 - noe mer dokumentasjonsarbeid i fase 1
+
+---
+
+# ADR-023
+
+## Role modelleres som egen kontrollert entitet i fase 1
+
+### Context
+
+Prosjektet har besluttet at roller ikke skal ligge direkte på `Agent`, men i relasjonen mellom en agent og en målentitet gjennom `Contribution`.
+
+Dette krever en egen modell for roller.
+
+Det måtte avklares:
+
+- om `Role` skal være egen entitet
+- om roller skal være kontrollert vokabular
+- om samme rollemodell skal brukes på tvers av flere nivåer i modellen
+- hvordan linked-data-prinsippet skal brukes på roller
+- om `Role` skal bruke samme primærnøkkelstrategi som hovedentitetene
+
+### Decision
+
+`Role` modelleres som en egen entitet i fase 1.
+
+`Role` brukes som kontrollert vokabular for roller i `Contribution`.
+
+I fase 1 har `Role` følgende felter:
+
+- `code`
+- `label`
+
+`code` er primærnøkkel for `Role` i fase 1.
+
+`code` skal være:
+
+- stabil
+- lokal
+- standardnær
+
+Kodene skal kunne mappes entydig til relevant eksternt vokabular der dette er faglig relevant, normalt LoC relator codes, eller annet passende register når det er mer relevant.
+
+`label` er menneskelesbar visningstekst.
+
+Det brukes bare én enkel `label` i fase 1.
+
+Egne operative felt som `uri`, `external_code` eller `vocabulary` inngår ikke i fase 1, men modellen skal ikke stenge for at slik mapping kan legges til senere.
+
+### Consequences
+
+Fordeler
+
+- tydelig skille mellom agent og rolle
+- samme rollemodell kan brukes på tvers av `Work`, `Expression`, `Manifestation` og `Item`
+- støtter kontrollert registrering og senere linked-data-mapping
+- mer lesbar og naturlig modell enn å bruke UUID på en liten kontrolltabell
+
+Ulemper
+
+- én ekstra kontrolltabell
+- krever vedlikehold av kontrollert vokabular
+- hvilke roller som er gyldige på hvilke nivåer må styres i modelleringsregler
 
 ---
 
