@@ -272,6 +272,118 @@ Om et eksemplar tilhører første utgave, fremgår dette gjennom vanlig utgavein
 
 Eventuelle copy-specific bibliografiske særtrekk vurderes senere og modelleres ikke særskilt i fase 1.
 
+---
+
+## Agent i fase 1
+
+### Hva Agent representerer
+
+`Agent` brukes for aktører som kan knyttes til andre entiteter gjennom bidrag eller relasjoner.
+
+I fase 1 brukes `Agent` for både:
+
+- personer
+- organisasjoner
+
+### Fase-1-felter på Agent
+
+`Agent` har i fase 1:
+
+- `id`
+- `name`
+- `agent_type`
+- `wikidata_id`
+
+### Foretrukket navn
+
+Feltet `name` brukes som agentens **foretrukne navn** i fase 1.
+
+Dette er ikke en teknisk unik identifikator.
+
+Ulike agenter kan ha samme navn.
+
+Variantnavn og eksplisitt pseudonymstruktur utsettes til senere fase.
+
+### Agent type
+
+`agent_type` er obligatorisk og bruker et kontrollert vokabular.
+
+I fase 1 brukes minst:
+
+- `person`
+- `organization`
+
+### Ekstern identifikator
+
+`wikidata_id` kan registreres når den er kjent.
+
+I fase 1 støttes minst én ekstern identifikator på `Agent`, men mer generell identifikatorstruktur utsettes.
+
+## Contribution i fase 1
+
+### Hva Contribution representerer
+
+`Contribution` brukes når en `Agent` har en rolle knyttet til en entitet i modellen.
+
+Rollen ligger i relasjonen, ikke på `Agent`.
+
+### Hvilke nivåer Contribution kan kobles til
+
+I fase 1 kan `Contribution` kobles til:
+
+- `Work`
+- `Expression`
+- `Manifestation`
+- `Item`
+
+### XOR-regel for målentitet
+
+Én rad i `Contribution` skal peke til **nøyaktig én** av følgende:
+
+- `work`
+- `expression`
+- `manifestation`
+- `item`
+
+Det er ikke tillatt at flere av disse er satt samtidig.
+
+Det er heller ikke tillatt at alle er tomme.
+
+### Rolle
+
+Rolle registreres i feltet `role`.
+
+`role` er obligatorisk og bruker kontrollert kode.
+
+Samme agent kan ha flere ulike roller mot samme entitet, men samme kombinasjon av målentitet + agent + rolle skal ikke registreres flere ganger.
+
+### Normativ bruk av nivåer
+
+Typisk bruk i fase 1:
+
+- `Work`: forfatter og andre verkrelaterte roller
+- `Expression`: oversetter, innleser og andre realiseringsrelaterte roller
+- `Manifestation`: forlag og andre utgaverelaterte roller
+- `Item`: strukturert proveniens når dette gir tydelig merverdi
+
+### Når Contribution kan brukes på Item
+
+`Contribution` kan brukes på `Item` når proveniens eller annen copy-specific agentrelasjon er viktig nok til å struktureres.
+
+Dette kan være aktuelt når:
+
+- tidligere eier er kjent og har tydelig verdi for gjenfinning
+- giver bør registreres som navngitt aktør
+- annen navngitt proveniensaktør bør kobles eksplisitt til eksemplaret
+
+I enkle tilfeller er `provenance_notes` tilstrekkelig.
+
+I fase 1 er det akseptabelt å bruke fritekst som hovedpraksis.
+
+`Contribution` på `Item` brukes ikke i fase 1 for aktiv utlånshåndtering, lånerstatus eller annen sirkulasjonslogikk.
+
+---
+
 ## 7. Series og SeriesMembership i fase 1
 
 ### Når Series skal brukes
