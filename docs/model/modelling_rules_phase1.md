@@ -1,712 +1,695 @@
 # Modelleringsregler — fase 1
 
-Dette dokumentet beskriver praktiske katalogiseringsregler for hvordan entiteter og relasjoner skal brukes i fase 1.
+Dette dokumentet beskriver praktisk modellerings- og registreringspraksis for fase 1 i Krimbiblioteket.
 
-Målet er å sikre konsistent registreringspraksis innenfor den valgte datamodellen.
+Formålet er å sikre konsistent bruk av datamodellen i tilfeller der databasen alene ikke avgjør hvordan noe bør registreres.
+
+Dette dokumentet beskriver:
+- hvordan modellen brukes i praksis
+- hvordan nivåvalg håndteres i tvilstilfeller
+- hvordan kontrollerte koder og vokabularer brukes i fase 1
+- hvordan grensetilfeller skal forstås innenfor den fryste modellen
+
+Dette dokumentet beskriver ikke:
+- arkitekturbeslutninger og beslutningshistorikk
+- harde invariants og databasekrav
+- roadmap eller prosjektstatus
+- lange designresonnementer
+
 
 ---
 
-## Overordnet prinsipp for kontrollerte koder
+## 1. Overordnet praksis i fase 1
 
-I fase 1 skal kontrollerte typer, relasjoner, roller og andre semantiske kategorier registreres med stabile lokale koder.
+### 1.1 Bruk den fryste modellen, ikke lokale snarveier
 
-Kodene skal kunne mappes entydig til relevante autoritetsregistre eller vokabularer der dette er faglig relevant.
+Når et tilfelle er vanskelig, skal det løses innenfor den vedtatte modellen.
+
+Det betyr blant annet:
+- ikke hopp over nivåer i WEMI-strukturen
+- ikke legg inn midlertidige fritekstløsninger der modellen allerede har en strukturert løsning
+- ikke utvid tabeller ad hoc for å håndtere enkelttilfeller
+
+Hvis et tilfelle ikke passer tydelig innenfor disse reglene, er det et modelleringsspørsmål som må avklares eksplisitt.
+
+
+### 1.2 Kontrollerte semantiske kategorier registreres med stabile lokale koder
+
+I fase 1 brukes stabile lokale koder for kontrollerte semantiske kategorier.
 
 Dette gjelder blant annet:
+- `expression_type`
+- `series_type`
+- `relation_type`
+- `role`
+- `Genre.code`
+- `AppealFactor.code`
 
-- språk
-- realiseringstype
-- serietyper
-- verkrelasjonstyper
-- agentroller
+Kodene skal brukes konsekvent og ikke erstattes av fri tekst i operative registreringer.
 
-I fase 1 brukes normalt ikke eksterne URI-er direkte i de operative tabellene.
+Eksterne URI-er brukes normalt ikke direkte i operative tabeller i fase 1.
 
-I stedet brukes stabile lokale koder med entydig mapping i vokabular- eller regelverket.
+
+### 1.3 Grensetilfeller løses gjennom praksis, ikke gjennom databasen alene
+
+Databasen avgjør ikke alene:
+- hva som er nytt `Work`
+- hva som er ny `Expression`
+- hva som er ny `Manifestation`
+
+Slike spørsmål må avgjøres gjennom katalogiseringsfaglig vurdering og konsekvent praksis.
+
 
 ---
 
-## 1. Work og Expression
+## 2. Work og Expression
 
-### Oversettelser
+### 2.1 Oversettelser registreres som ny Expression av samme Work
 
-En oversettelse registreres som **ny Expression** av samme `Work`.
-
-Eksempel:
-
-- `Work`: originalverket
-- `Expression`: engelsk tekst
-- `Expression`: norsk oversettelse
-
-### Lydbok
-
-En lydbok registreres som **ny Expression** av samme `Work`.
-
-Tekst og lydbok av samme språk regnes som **ulike Expressions**, fordi de representerer ulike realiseringer av verket.
+En oversettelse registreres som ny `Expression` av samme `Work`.
 
 Eksempel:
+- originaltekst på svensk = én `Expression`
+- norsk oversettelse = én annen `Expression`
 
+Språkforskjellen ligger altså på `Expression`-nivå, ikke på `Work`-nivå.
+
+
+### 2.2 Lydbok registreres som ny Expression av samme Work
+
+En lydbok registreres som ny `Expression` av samme `Work`.
+
+Dette gjelder også når språk er det samme som i tekstutgaven.
+
+Eksempel:
 - `Expression (nor, text)`
 - `Expression (nor, spoken_word)`
 
-### Flere Expressions med samme språk og samme type
+Tekst og innlest lyd behandles altså som ulike realiseringer av samme verk.
+
+
+### 2.3 Flere Expressions med samme språk og samme type er tillatt
 
 Det er tillatt å ha flere `Expressions` innenfor samme `Work` med samme:
-
 - `language_code`
 - `expression_type`
 
-Dette kan være aktuelt ved for eksempel:
-
+Dette kan være relevant ved for eksempel:
 - sterkt reviderte tekster
 - forkortede versjoner
-- andre særskilte realiseringer
+- andre særskilte realiseringer som fortsatt ikke vurderes som nytt `Work`
 
-Slike tilfeller må vurderes faglig og håndteres gjennom katalogiseringspraksis, ikke gjennom teknisk unik constraint.
+Slike tilfeller skal håndteres gjennom faglig vurdering, ikke gjennom forenklede tekniske antakelser om at kombinasjonen må være unik.
 
-### Filmatisering
 
-En filmatisering registreres som **nytt Work**.
+### 2.4 Filmatisering registreres som nytt Work
 
-### Grafisk adaptasjon
+En filmatisering registreres som nytt `Work`.
 
-En grafisk adaptasjon registreres som **nytt Work**.
+Den skal ikke registreres som bare en ny `Expression` av bokverket.
 
-### Sterkt revidert tekst
 
-Sterkt reviderte tekster må vurderes konkret.
+### 2.5 Grafisk adaptasjon registreres som nytt Work
 
-Dette avgjøres gjennom katalogiseringsfaglig skjønn og ikke gjennom databasen alene.
+En grafisk adaptasjon registreres som nytt `Work`.
+
+Den skal ikke automatisk behandles som bare en annen `Expression` av det opprinnelige verket.
+
+
+### 2.6 Sterkt reviderte tekster må vurderes konkret
+
+Sterkt reviderte tekster vurderes konkret.
+
+Hovedspørsmålet er om vi fortsatt står i samme verkidentitet, eller om endringen er så stor at det bør registreres som nytt `Work`.
+
+Dette avgjøres ikke av databasen alene.
+
 
 ---
 
-## 2. Expression
+## 3. Expression
 
-### Språk
+### 3.1 Språk registreres på Expression
 
 Språk registreres på `Expression`-nivå.
 
-Språk kodes med verdier fra **LOC Language Vocabulary**.
+I fase 1 brukes språkkoder konsekvent som kontrollert verdi.
 
 Eksempler:
-
 - `eng`
 - `nor`
 - `ger`
 - `fre`
 
-### Realiseringstype
+Språk skal ikke brukes som bærende klassifisering på `Work`, `Manifestation` eller `Item`.
 
-Realiseringstype registreres i feltet `expression_type`.
+
+### 3.2 Realiseringstype registreres i expression_type
+
+Realiseringstype registreres i `expression_type`.
 
 Verdien skal være en stabil lokal kode.
 
-Feltet kan senere mappes til **RDA Content Type**.
-
 Eksempler:
-
 - `text`
 - `spoken_word`
 - `moving_image`
 - `still_image`
 
-### Bidrag på Expression-nivå
+Verdiene skal brukes konsekvent og ikke varieres som fritekst.
 
-Roller som gjelder realiseringen av verket registreres på `Expression`.
 
-Eksempler:
+### 3.3 Bidrag på Expression-nivå brukes for realiseringsrelaterte roller
 
+Roller som gjelder selve realiseringen av verket, registreres på `Expression`.
+
+Typiske eksempler:
 - oversetter
 - innleser
 
+Dette skiller slike roller fra:
+- verkrelaterte roller på `Work`
+- utgaverelaterte roller på `Manifestation`
+
+
 ---
 
-## 3. Manifestation
+## 4. ExpressionManifestation
 
-### Manifestation som utgavenivå
+### 4.1 Expression–Manifestation brukes via koblingstabellen ExpressionManifestation
 
-`Manifestation` representerer den konkrete publiserte utgaven av en `Expression`.
+I fase 1 modelleres relasjonen mellom `Expression` og `Manifestation` via:
 
-Forskjeller i publiseringsform og utgave registreres som ulike `Manifestations`, ikke som nye `Expressions`.
+- `ExpressionManifestation`
 
-### Eksempler på ulike Manifestations
+Dette gjelder også i vanlige enkelttilfeller.
+
+Det skal altså ikke brukes en skjult eller alternativ 1:M-praksis ved registrering.
+
+
+### 4.2 Normalmønsteret er fortsatt enkelt
+
+Selv om modellen formelt er M2M, er normalmønsteret i praksis ofte:
+
+- én `Manifestation` til én `Expression`
+- én `Expression` til flere `Manifestations`
+
+Dette er vanlig mønster, men ikke en tvangstrøye for modellen.
+
+
+### 4.3 Når flere Expressions kan kobles til samme Manifestation
+
+Flere `Expressions` kan kobles til samme `Manifestation` når utgaven faktisk inneholder flere realiseringer eller verkrealiseringer.
+
+Dette kan være relevant for eksempel ved:
+- antologier
+- samlingsverk
+- omnibusutgaver
+- samleutgaver med flere separate uttrykk
+
+
+### 4.4 is_primary brukes for primærkobling når dette gir mening
+
+Feltet `is_primary` brukes for å markere primærkobling når en slik primærkobling faktisk gir mening.
+
+Praktisk regel:
+- vanlige utgaver skal normalt ha én primærkobling
+- antologier og enkelte samleutgaver kan ha ingen primærkobling
+
+Det skal aldri legges inn flere primærkoblinger for samme `Manifestation`.
+
+
+### 4.5 Det som utsettes i ExpressionManifestation skal ikke improviseres inn
+
+Fase 1 inkluderer ikke:
+- rekkefølge / sekvens
+- koblingstype / relasjonsrolle i koblingen
+
+Slike behov skal ikke løses ved å legge inn improviserte ekstrafelt eller fritekst i tabellen.
+
+
+---
+
+## 5. Manifestation
+
+### 5.1 Manifestation representerer utgavenivået
+
+`Manifestation` representerer den konkrete publiserte utgaven.
+
+Forskjeller i publiseringsform og utgave registreres normalt som ulike `Manifestations`, ikke som nye `Expressions`.
+
+
+### 5.2 Typiske ulike Manifestations av samme Expression
 
 Følgende registreres normalt som ulike `Manifestations` av samme `Expression`:
-
 - hardcover
 - paperback
 - epub
 - pdf
 
-### Identifikatorer på Manifestation
+Dette er utgave- eller publiseringsnivå, ikke realiseringsnivå.
 
-Følgende identifikatorer registreres på `Manifestation` i fase 1:
 
+### 5.3 Identifikatorer på Manifestation i fase 1
+
+I fase 1 registreres følgende identifikatorer på `Manifestation` når de finnes:
 - `isbn`
 - `nb_sesamid`
 
-`nb_sesamid` brukes som navn for Nasjonalbibliotekets identifikator i modellen.
+Disse brukes som identifikatorer for utgavenivået.
 
-### Forlag
 
-Forlag hører til `Manifestation`-nivået.
+### 5.4 Forlag hører til Manifestation-nivået
 
-Forlag modelleres via `Contribution / Agent`, ikke som eget tekstfelt i fase 1.
+Forlag hører til `Manifestation`.
 
-### Serier på utgavenivå
+I fase 1 modelleres dette via `Contribution` / `Agent`, ikke som eget fritekstfelt.
 
-Forlagsserier registreres på `Manifestation`-nivå.
 
-Narrative serier registreres derimot på `Work`-nivå.
+### 5.5 Forlagsserier hører til Manifestation-nivået
 
----
+Når en serie er en forlagsserie, registreres serietilknytningen på `Manifestation`-nivå, ikke på `Work`.
 
-## 4. Work
+Dette skjer via `SeriesMembership`.
 
-### Sjanger og appellfaktorer
-
-Sjanger og appellfaktorer registreres på `Work`-nivå.
-
-Disse beskriver fortellingen og ikke en bestemt utgave eller realisering.
-
-### Karakterer
-
-Karakterer registreres på `Work`-nivå.
-
-I fase 1 registreres primært sentrale karakterer med tydelig navigasjonsverdi.
-
-### Verkrelasjoner
-
-Relasjoner mellom verk registreres gjennom `WorkRelationship`.
-
-`WorkRelationship` brukes bare mellom to `Work`-poster.
-
-Relasjonen er retningsbestemt og registreres med:
-
-- `source_work`
-- `target_work`
-- `relation_type`
-
-`relation_type` skal være en stabil lokal kontrollert kode.
-
-Koden skal kunne mappes entydig til relevant relasjonsvokabular, normalt **RDA Registry**.
-
-Eksempler på relasjonstyper som kan brukes i modelleringsreglene:
-
-- adaptasjon av
-- inspirert av
-- videreføring av
-- basert på
-
-Databasen avgjør ikke alene hvilke inverse former som skal foretrekkes eller hvordan grensetilfeller skal forstås. Dette styres av modelleringsreglene.
-
----
-
-## 5. Kommentar om grensetilfeller
-
-Databasen avgjør ikke automatisk hva som er nytt `Work` versus ny `Expression`.
-
-Ved tvilstilfeller skal vurderingen dokumenteres og følge disse modelleringsreglene, ikke løses gjennom ad hoc-praksis.
 
 ---
 
 ## 6. Item
 
-### Item som eksemplarnivå
+### 6.1 Item brukes bare for eksemplarspesifikke data
 
-`Item` representerer det individuelle fysiske eksemplaret i samlingen.
+`Item` representerer det individuelle eksemplaret.
 
-I fase 1 brukes `Item` kun til data som gjelder det konkrete eksemplaret, ikke bibliografiske data om utgaven.
+I fase 1 brukes `Item` bare for data som faktisk gjelder det konkrete eksemplaret.
 
-Eksempler på data som hører til `Item`:
-
+Eksempler:
 - `shelf_location`
 - `provenance_notes`
 - lokale eksemplarnotater
 
-Eksempler på data som **ikke** hører til `Item`:
+Bibliografiske forhold ved utgaven skal ikke flyttes ned på `Item`.
 
-- ISBN
-- `nb_sesamid`
-- utgivelsesår
-- annen bibliografisk utgaveinformasjon
 
-Slike data hører til `Manifestation`.
-
-### Proveniens
-
-Proveniens brukes om et eksemplars eier- og historieforløp.
-
-Dette kan for eksempel omfatte:
-
-- tidligere eiere
-- gaveopplysninger
-- samlingstilknytning
-- ex libris
-- dedikasjoner
-- stempler eller andre spor på eksemplaret
-
-I fase 1 registreres proveniens normalt i:
-
-- `provenance_notes`
-
-### Når Contribution kan brukes på Item
-
-`Contribution` kan også brukes på `Item` når proveniens eller eierskap er viktig nok til å struktureres.
-
-Dette kan være aktuelt når:
-
-- tidligere eier er kjent og har tydelig verdi for gjenfinning
-- giver bør registreres som navngitt aktør
-- samlingshistorikk bør kunne kobles strukturert til agent
+### 6.2 Proveniens kan registreres enkelt eller strukturert
 
 I enkle tilfeller er `provenance_notes` tilstrekkelig.
 
-I fase 1 er det akseptabelt å bruke fritekst som hovedpraksis.
+Når proveniens eller annen copy-specific agentrelasjon har tydelig verdi for søk, dokumentasjon eller navigasjon, kan den registreres strukturert via `Contribution` på `Item`.
 
-### Førsteutgave
+Typiske tilfeller:
+- tidligere eier
+- giver
+- annen navngitt proveniensaktør
 
-`is_first_edition` brukes ikke på `Item`.
 
-Om et eksemplar tilhører første utgave, fremgår dette gjennom vanlig utgaveinformasjon på `Manifestation`-nivå, ikke som eget boolsk felt på `Item`.
+### 6.3 Item brukes ikke for sirkulasjonslogikk i fase 1
 
-Eventuelle copy-specific bibliografiske særtrekk vurderes senere og modelleres ikke særskilt i fase 1.
+Fase 1 inkluderer ikke modellering av:
+- aktiv låner
+- utlånshistorikk
+- annen sirkulasjonslogikk
+
+Slike behov skal ikke bygges inn i `Item` eller `Contribution` i denne fasen.
+
 
 ---
 
-## Agent i fase 1
+## 7. Work
 
-### Hva Agent representerer
+### 7.1 Sjanger registreres på Work
 
-`Agent` brukes for aktører som kan knyttes til andre entiteter gjennom bidrag eller relasjoner.
+Sjanger registreres på `Work`-nivå.
 
-I fase 1 brukes `Agent` for både:
+Sjanger beskriver fortellingen og verkets innholdsmessige identitet, ikke en bestemt utgave eller realisering.
 
+Samme verk kan ha flere sjangre.
+
+
+### 7.2 Appellfaktorer registreres på Work
+
+Appellfaktorer registreres på `Work`-nivå.
+
+Appellfaktorer beskriver leseopplevelse og fortellingskarakter, ikke språkversjon eller utgave.
+
+Samme verk kan ha flere appellfaktorer.
+
+
+### 7.3 Karakterer registreres på Work
+
+Karakterer registreres på `Work`-nivå.
+
+De skal ikke kobles til:
+- `Expression`
+- `Manifestation`
+- `Item`
+
+I fase 1 bør registrering primært brukes for karakterer med tydelig verdi for søk, filtrering eller navigasjon.
+
+
+### 7.4 Verkrelasjoner registreres mellom Work og Work
+
+Relasjoner mellom verk registreres gjennom `WorkRelationship`.
+
+Dette brukes bare mellom to `Work`-poster.
+
+Eksempler på relasjonstyper kan være:
+- adaptasjon av
+- inspirert av
+- videreføring av
+- basert på
+
+Retningsvalg og bruk av relasjonstyper må være konsekvent i praksis.
+
+
+---
+
+## 8. Genre og WorkGenre
+
+### 8.1 Genre er kontrollert vokabular, ikke fri tagging
+
+`Genre` brukes som kontrollert Work-taksonomi.
+
+I fase 1 brukes:
+- `code`
+- `label`
+- `parent_genre`
+
+Sjanger skal ikke registreres som løs, ukontrollert fritekst når formålet er å uttrykke modellens sjangerstruktur.
+
+
+### 8.2 WorkGenre brukes for koblingen mellom Work og Genre
+
+Koblingen mellom `Work` og `Genre` går via:
+- `WorkGenre`
+
+Samme sjanger skal ikke registreres flere ganger på samme verk.
+
+
+### 8.3 Hierarki brukes eksplisitt når det er relevant
+
+Sjangervokabularet skal støtte eksplisitt hierarki gjennom `parent_genre`.
+
+Det betyr at over-/underordning skal håndteres i vokabularet, ikke improviseres i etiketter eller notater.
+
+
+---
+
+## 9. AppealFactor og WorkAppealFactor
+
+### 9.1 AppealFactor brukes som kontrollert Work-vokabular
+
+`AppealFactor` brukes som kontrollert vokabular på `Work`-nivå.
+
+I fase 1 brukes:
+- `code`
+- `label`
+- `parent_appeal_factor`
+- `definition`
+- `scope_note`
+
+Dette skal brukes som styrt vokabular, ikke som løs fritekstklassifisering.
+
+
+### 9.2 WorkAppealFactor brukes for koblingen mellom Work og AppealFactor
+
+Koblingen mellom `Work` og `AppealFactor` går via:
+- `WorkAppealFactor`
+
+Samme appellfaktor skal ikke registreres flere ganger på samme verk.
+
+
+### 9.3 Definition og scope_note skal brukes aktivt ved tvilstilfeller
+
+Når appelltermer er vanskelige å skille, skal:
+- `definition`
+- `scope_note`
+
+brukes som praktisk støtte for konsekvent registrering.
+
+Dette er særlig viktig fordi grensene mellom appellfaktor, sjanger og tematikk ellers kan bli uklare.
+
+
+### 9.4 Synonymer brukes ikke operativt i fase 1
+
+Synonymer er utsatt som operativ fase-1-funksjonalitet.
+
+Det betyr:
+- ingen egen synonymtabell i fase 1
+- ingen improvisert synonymhåndtering i operative tabeller
+
+Hvis alternative betegnelser er viktige i praksis, må det håndteres senere i egen struktur.
+
+
+---
+
+## 10. Character og WorkCharacter
+
+### 10.1 Når Character skal brukes
+
+`Character` brukes når en fiktiv figur skal modelleres som en egen, gjenbrukbar entitet.
+
+Dette er særlig relevant når karakteren:
+- går igjen i flere verk
+- har tydelig verdi for søk eller navigasjon
+- bør behandles som mer enn bare en løs tekstopplysning
+
+
+### 10.2 Character holdes enkel i fase 1
+
+I fase 1 har `Character` bare:
+- `id`
+- `name`
+
+Det brukes én foretrukket navneform per karakter.
+
+Variantnavn håndteres ikke som egen struktur i fase 1.
+
+
+### 10.3 Navnepraksis må være streng
+
+Fordi variantnavn er utsatt, må registreringspraksisen være konsekvent.
+
+Unngå å opprette separate karakterposter for små variasjoner som:
+- fullt navn vs. kortform
+- alternative stavemåter
+- små forskjeller i tegnsetting
+
+Hvis det er tvil om to navn viser til samme karakter, skal dette vurderes eksplisitt før ny post opprettes.
+
+
+### 10.4 WorkCharacter brukes som ren kobling
+
+Koblingen mellom `Work` og `Character` går via:
+- `WorkCharacter`
+
+I fase 1 brukes denne som ren kobling uten ekstra relasjonsmetadata.
+
+Det innføres ikke i fase 1:
+- karakterrolle
+- prioritet
+- note
+- kilde
+- usikkerhet
+
+
+---
+
+## 11. Agent, Role og Contribution
+
+### 11.1 Agent brukes for både personer og organisasjoner
+
+`Agent` brukes for både:
 - personer
 - organisasjoner
 
-### Fase-1-felter på Agent
-
-`Agent` har i fase 1:
-
+I fase 1 har `Agent`:
 - `id`
 - `name`
 - `agent_type`
 - `wikidata_id`
 
-### Foretrukket navn
+`name` forstås som foretrukket navn, ikke som unik identifikator.
 
-Feltet `name` brukes som agentens **foretrukne navn** i fase 1.
 
-Dette er ikke en teknisk unik identifikator.
+### 11.2 Agent type skal brukes konsekvent
 
-Ulike agenter kan ha samme navn.
-
-Variantnavn og eksplisitt pseudonymstruktur utsettes til senere fase.
-
-### Agent type
-
-`agent_type` er obligatorisk og bruker et kontrollert vokabular.
+`agent_type` er obligatorisk og skal bruke kontrollert verdi.
 
 I fase 1 brukes minst:
-
 - `person`
 - `organization`
 
-### Ekstern identifikator
+Verdiene skal ikke erstattes av fritekstvarianter.
+
+
+### 11.3 wikidata_id kan brukes, VIAF er utsatt
 
 `wikidata_id` kan registreres når den er kjent.
 
-I fase 1 støttes minst én ekstern identifikator på `Agent`, men mer generell identifikatorstruktur utsettes.
+I fase 1 brukes ikke eget felt for `viaf_id`.
 
-## Contribution i fase 1
+Andre identifikatorer og mer generell identifikatorstruktur er utsatt.
 
-### Hva Contribution representerer
+
+### 11.4 Role brukes som kontrollert rollevokabular
+
+`Role` brukes som kontrollert vokabular for agentroller.
+
+I fase 1 har `Role`:
+- `code`
+- `label`
+
+Rollen skal ligge i relasjonen, ikke på `Agent`.
+
+
+### 11.5 Contribution brukes for agent + rolle + målentitet
 
 `Contribution` brukes når en `Agent` har en rolle knyttet til en entitet i modellen.
 
-Rollen ligger i relasjonen, ikke på `Agent`.
-
-### Hvilke nivåer Contribution kan kobles til
-
 I fase 1 kan `Contribution` kobles til:
-
 - `Work`
 - `Expression`
 - `Manifestation`
 - `Item`
 
-### XOR-regel for målentitet
+Én rad skal alltid peke til nøyaktig én av disse.
 
-Én rad i `Contribution` skal peke til **nøyaktig én** av følgende:
 
-- `work`
-- `expression`
-- `manifestation`
-- `item`
+### 11.6 Typisk nivåbruk for Contribution
 
-Det er ikke tillatt at flere av disse er satt samtidig.
+Som hovedpraksis i fase 1 brukes:
+- `Work` for verkrelaterte roller, for eksempel forfatter
+- `Expression` for realiseringsrelaterte roller, for eksempel oversetter eller innleser
+- `Manifestation` for utgaverelaterte roller, for eksempel forlag
+- `Item` for strukturert proveniens når dette gir tydelig merverdi
 
-Det er heller ikke tillatt at alle er tomme.
+Ved tvil skal rollen legges på det nivået den faktisk beskriver.
 
-### Rolle
-
-Rolle registreres i feltet `role`.
-
-`role` er obligatorisk og bruker kontrollert kode.
-
-Samme agent kan ha flere ulike roller mot samme entitet, men samme kombinasjon av målentitet + agent + rolle skal ikke registreres flere ganger.
-
-### Normativ bruk av nivåer
-
-Typisk bruk i fase 1:
-
-- `Work`: forfatter og andre verkrelaterte roller
-- `Expression`: oversetter, innleser og andre realiseringsrelaterte roller
-- `Manifestation`: forlag og andre utgaverelaterte roller
-- `Item`: strukturert proveniens når dette gir tydelig merverdi
-
-### Når Contribution kan brukes på Item
-
-`Contribution` kan brukes på `Item` når proveniens eller annen copy-specific agentrelasjon er viktig nok til å struktureres.
-
-Dette kan være aktuelt når:
-
-- tidligere eier er kjent og har tydelig verdi for gjenfinning
-- giver bør registreres som navngitt aktør
-- annen navngitt proveniensaktør bør kobles eksplisitt til eksemplaret
-
-I enkle tilfeller er `provenance_notes` tilstrekkelig.
-
-I fase 1 er det akseptabelt å bruke fritekst som hovedpraksis.
-
-`Contribution` på `Item` brukes ikke i fase 1 for aktiv utlånshåndtering, lånerstatus eller annen sirkulasjonslogikk.
 
 ---
 
-## 7. Series og SeriesMembership i fase 1
+## 12. Series og SeriesMembership
 
-### Når Series skal brukes
+### 12.1 Når Series skal brukes
 
-`Series` brukes når en serie skal modelleres som en egen, gjenbrukbar entitet i databasen.
+`Series` brukes når en serie skal modelleres som en egen, gjenbrukbar entitet.
 
-I fase 1 brukes `Series` for minst to serietyper:
-
+I fase 1 brukes `Series` for minst:
 - narrative serier
 - forlagsserier
 
-`Series` skal ikke erstattes av fritekstfelt når formålet er å uttrykke faktisk serietilknytning i modellen.
+Serietilknytning skal ikke reduseres til fritekst når modellen faktisk trenger strukturen.
 
-### Hvordan series_type skal brukes
 
-Hver `Series`-post skal ha en obligatorisk verdi i `series_type`.
+### 12.2 series_type er obligatorisk og lukket i fase 1
 
-I fase 1 er vokabularet lukket og består bare av:
-
+I fase 1 brukes bare:
 - `narrative`
 - `publisher_series`
 
-Bruk:
-
-- `narrative` når serien uttrykker fortellingsmessig eller verkrelatert tilknytning
-- `publisher_series` når serien uttrykker utgave- eller publiseringsrelatert tilknytning på manifestasjonsnivå
-
-Andre serietyper utsettes til senere fase.
+Andre serietyper er utsatt.
 
 `character_series` brukes ikke som egen `series_type` i fase 1.
 
-### Valg av nivå for serietilknytning
 
-Serietilknytning skal registreres på det nivået den faktisk hører hjemme.
+### 12.3 Narrative serier registreres på Work
 
-Bruk:
+Når serien uttrykker fortellingsmessig eller verkrelatert tilknytning, registreres den på `Work`-nivå via `SeriesMembership`.
 
-- `Work` når serien er narrativ og gjelder verket som sådan
-- `Manifestation` når serien er knyttet til en bestemt utgave eller publiseringsform
 
-Hovedregel:
+### 12.4 Forlagsserier registreres på Manifestation
 
-- narrative serier registreres via `SeriesMembership` mot `Work`
-- forlagsserier registreres via `SeriesMembership` mot `Manifestation`
+Når serien uttrykker publiserings- eller utgaverelatert tilknytning, registreres den på `Manifestation`-nivå via `SeriesMembership`.
 
-Samme bok kan derfor ha:
 
-- en narrativ serietilknytning på `Work`
-- en forlagsserietilknytning på `Manifestation`
+### 12.5 part_number og part_display brukes pragmatisk
 
-Dette skal registreres som to ulike `SeriesMembership`-rader.
-
-### Hvordan SeriesMembership skal brukes
-
-`SeriesMembership` representerer én konkret kobling mellom en serie og dens mål.
-
-Én rad i `SeriesMembership` skal peke til:
-
-- enten `Work`
-- eller `Manifestation`
-
-Aldri begge samtidig.
-
-Det skal heller ikke opprettes rader uten mål.
-
-Samme serie skal ikke registreres flere ganger mot samme mål.
-
-Det betyr:
-
-- maks én rad per (`series`, `work`)
-- maks én rad per (`series`, `manifestation`)
-
-### Nummerering i SeriesMembership
-
-Fase 1 skal støtte enkel og praktisk nummerering uten å kreve full normalisering.
-
-Feltene brukes slik:
-
-- `part_number` brukes når nummereringen kan uttrykkes som en enkel sorterbar verdi
-- `part_display` brukes når nummereringen bør vises i en bestemt form, eller når den ikke passer rent i `part_number`
-
-Begge felter er valgfrie.
-
-Modellen skal derfor tåle:
-
-- serietilknytning uten nummer
-- nummerering bare i `part_display`
-- ulik verdi for sortering og visning
+Når seriemedlemskap har rekkefølge- eller delinformasjon, brukes:
+- `part_number` når strukturen er tallmessig og tydelig
+- `part_display` når visningsformen bør bevares som tekst
 
 Eksempler:
-
 - `part_number = 1`, `part_display = Del 1`
 - `part_number = 2`, `part_display = Bok 2`
 - `part_number = null`, `part_display = Del II`
 - `part_number = null`, `part_display = null`
 
-### Hva som ikke gjøres i fase 1
+Begge felt kan være nyttige samtidig når både sortering og visning er viktig.
+
+
+### 12.6 Dette gjøres ikke i fase 1
 
 Fase 1 inkluderer ikke:
-
 - `context_note` på `SeriesMembership`
 - seriehierarki som `parent_series`
 - variantnavn på `Series`
 - egne serietyper utover `narrative` og `publisher_series`
 
-Hvis et serietilfelle ikke passer rent i fase-1-modellen, skal det vurderes som et modelleringsspørsmål, ikke løses ved å utvide databasen ad hoc.
+Hvis et tilfelle ikke passer rent i fase-1-modellen, skal det løftes som modelleringsspørsmål.
 
-## Character i fase 1
-
-### Når Character skal brukes
-
-`Character` brukes når en fiktiv figur skal modelleres som en egen, gjenbrukbar entitet i databasen.
-
-Dette gjelder når figuren er relevant som identifiserbar karakter på tvers av ett eller flere verk, og når karakteren skal kunne brukes til søk, filtrering eller navigasjon.
-
-Karakterer skal ikke registreres bare som fritekst på `Work` dersom formålet er å uttrykke faktisk karaktertilknytning i modellen.
 
 ---
 
-### Hvilket nivå Character hører til
+## 13. WorkRelationship
 
-Karakterer registreres på `Work`-nivå.
+### 13.1 WorkRelationship brukes bare mellom verk
 
-Dette betyr at karakterer:
+`WorkRelationship` brukes bare mellom `Work` og `Work`.
 
-- ikke kobles til `Expression`
-- ikke kobles til `Manifestation`
-- ikke kobles til `Item`
-
-Begrunnelse:
-Karakterer er en del av verkets innholdsmessige identitet, ikke av språkversjon, utgave eller eksemplar.
-
----
-
-### Hvordan koblingen mellom Work og Character skal brukes
-
-Koblingen mellom `Work` og `Character` går via en egen koblingstabell:
-
-- `WorkCharacter`
-
-Dette brukes fordi:
-
-- ett verk kan ha flere karakterer
-- samme karakter kan forekomme i flere verk
-
-Samme karakter skal ikke registreres flere ganger mot samme verk.
-
-Det betyr:
-
-- maks én rad per (`work`, `character`)
-
----
-
-### Fase-1-felter for Character
-
-I fase 1 har `Character` bare følgende felter:
-
-- `id`
-- `name`
-
-`name` brukes som karakterens foretrukne navn i fase 1.
-
-Det innføres ikke eget felt for variantnavn i denne fasen.
-
----
-
-### Navnepraksis i fase 1
-
-Fordi variantnavn er utsatt, må navnepraksis være stram.
-
-Hovedregel:
-Bruk én konsekvent foretrukket navneform per karakter.
-
-Dette er viktig for å redusere risikoen for at samme karakter opprettes flere ganger med små variasjoner i navn.
-
-Eksempler på variasjoner som i fase 1 må håndteres gjennom praksis, ikke egen struktur:
-
-- fullt navn vs. kortform
-- alternative stavemåter
-- små forskjeller i tegnsetting eller mellomnavn
-
-`name` er ikke en teknisk unik identifikator. Ulike karakterer kan ha samme navn. Det er `id` som identifiserer entiteten.
-
----
-
-### Hva som ikke gjøres i fase 1
-
-Fase 1 inkluderer ikke:
-
-- variantnavn
-- beskrivelser eller noter på `Character`
-- rollemarkering som hovedkarakter / bikarakter
-- andre karakterattributter
-- eksterne identifikatorer
-
-Hvis det oppstår behov for slike opplysninger, skal det vurderes som senere modellutvidelse, ikke løses ved å utvide fase-1-modellen ad hoc.
-
-## WorkCharacter i fase 1
-
-### Når WorkCharacter skal brukes
-
-`WorkCharacter` brukes når en karaktertilknytning mellom et verk og en karakter skal registreres eksplisitt i databasen.
-
-Tabellen brukes fordi:
-
-- ett verk kan ha flere karakterer
-- samme karakter kan forekomme i flere verk
-
-`WorkCharacter` er derfor den eksplisitte koblingen mellom `Work` og `Character`.
-
----
-
-### Hvilket nivå WorkCharacter hører til
-
-`WorkCharacter` kobler bare:
-
-- `Work`
-- `Character`
-
-Tabellen skal ikke brukes mot:
-
+Det brukes ikke for relasjoner mellom:
 - `Expression`
 - `Manifestation`
 - `Item`
 
-Begrunnelse:
 
-Karakterer er modellert som en `Work`-nivåegenskap, og relasjonen skal derfor ligge på samme nivå.
+### 13.2 Relasjonen er retningsbestemt
 
----
+Ved registrering må det tas stilling til:
+- hva som er `source_work`
+- hva som er `target_work`
+- hvilken `relation_type` som uttrykker forholdet best
 
-### Fase-1-felter for WorkCharacter
+Praksisen må være konsekvent slik at lignende tilfeller registreres på samme måte.
 
-I fase 1 har `WorkCharacter` bare følgende felter:
 
-- `id`
-- `work`
-- `character`
+### 13.3 relation_type skal være kontrollert
 
-Alle tre feltene er obligatoriske i fase 1.
+`relation_type` skal være en stabil lokal kode.
 
----
+Den skal brukes konsekvent og ikke erstattes av fritekstformuleringer i selve relasjonsfeltet.
 
-### Registreringsregel for duplikater
 
-Samme karakter skal ikke registreres flere ganger mot samme verk.
+### 13.4 Grensetilfeller må håndteres eksplisitt
 
-Det betyr:
+Ved tvil om en relasjon bør uttrykkes som:
+- adaptasjon
+- inspirert av
+- videreføring
+- basert på
+- annet vedtatt relasjonsforhold
 
-- maks én rad per (`work`, `character`)
+skal vurderingen gjøres eksplisitt og konsekvent.
 
-Dette er ikke bare en anbefalt praksis, men en regel som skal håndheves teknisk.
+Databasen avgjør ikke alene hvilke tolkninger som er riktige.
 
----
-
-## Overordnet prinsipp for kontrollerte koder
-
-I fase 1 skal kontrollerte typer, relasjoner, roller og andre semantiske kategorier registreres med stabile lokale koder.
-
-Kodene skal kunne mappes entydig til relevante autoritetsregistre eller vokabularer der dette er faglig relevant.
-
-Dette gjelder blant annet:
-
-- språk
-- realiseringstype
-- serietyper
-- verkrelasjonstyper
-- agentroller
-
-I fase 1 brukes normalt ikke eksterne URI-er direkte i de operative tabellene.
-
-I stedet brukes stabile lokale koder med entydig mapping i vokabular- eller regelverket.
 
 ---
 
-## Role i fase 1
+## 14. Praktisk tommelfingerregel for nivåvalg
 
-### Hva Role representerer
+Bruk denne enkle testrekken når du er i tvil:
 
-`Role` er kontrollert vokabular for agentroller i modellen.
+- Gjelder dette verkets innholdsmessige identitet?  
+  → vurder `Work`
 
-`Role` brukes sammen med `Contribution` for å uttrykke hvilken rolle en `Agent` har i forhold til en målentitet.
+- Gjelder dette språk, realisering eller versjon av verket?  
+  → vurder `Expression`
 
-### Fase-1-felter på Role
+- Gjelder dette den publiserte utgaven eller formatet?  
+  → vurder `Manifestation`
 
-`Role` har i fase 1:
+- Gjelder dette det konkrete eksemplaret i samlingen?  
+  → vurder `Item`
 
-- `code`
-- `label`
-
-### Code
-
-`code` er rollens stabile lokale, standardnære kode.
-
-Det er denne verdien som fungerer som primær identifikator i modellen.
-
-Koden skal kunne mappes entydig til relevant eksternt rolle-vokabular, normalt LoC relator codes, eller annet passende register når det er mer relevant.
-
-### Label
-
-`label` er menneskelesbar visningstekst.
-
-I fase 1 brukes én enkel `label`.
-
-### Prinsipp for rollebruk
-
-Roller skal registreres konsistent og med så presise koder som nødvendig.
-
-Det er ikke ønskelig å bruke fritekst eller lokale frie formuleringer i stedet for kontrollerte roller.
-
----
-
-### Hva som ikke gjøres i fase 1
-
-Fase 1 inkluderer ikke ekstra relasjonsfelter på `WorkCharacter`.
-
-Følgende er utsatt:
-
-- rolle i verket
-- visningsrekkefølge eller prioritet
-- note
-- kilde
-- usikkerhetsmarkering
-- andre metadata på relasjonen
-
-Hvis det senere blir behov for å beskrive karakterens funksjon i verket nærmere, skal dette vurderes som en senere utvidelse av `WorkCharacter`, ikke løses ad hoc i fase 1.
+Hvis svaret fortsatt er uklart, er det et modelleringsspørsmål som bør avklares før registrering fortsetter.
