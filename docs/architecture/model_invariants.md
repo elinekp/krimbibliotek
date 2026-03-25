@@ -564,6 +564,73 @@ Følgende typer relasjonsdata er utsatt til senere fase:
 
 ---
 
+# 33. Agent er en egen entitet for personer og organisasjoner
+
+`Agent` er en egen entitet i modellen.
+
+I fase 1 brukes `Agent` for både:
+
+- personer
+- organisasjoner
+
+`Agent` skal ha:
+
+- `id`
+- `name`
+- `agent_type`
+- `wikidata_id`
+
+`name` representerer agentens foretrukne navn.
+
+`agent_type` er obligatorisk og kontrollert.
+
+Roller skal ikke ligge på `Agent`, men i relasjonen mellom agent og målentitet.
+
+--
+
+# 34. Role er en egen kontrollert entitet
+
+Roller modelleres gjennom entiteten `Role`.
+
+`Role` brukes i `Contribution` og ligger ikke direkte på `Agent`.
+
+I fase 1 skal `Role` ha:
+
+- `code`
+- `label`
+
+`code` er den stabile lokale, standardnære identifikatoren for rollen og fungerer som primærnøkkel.
+
+Roller skal kunne mappes entydig til relevant eksternt vokabular der dette er faglig relevant, normalt LoC relator codes.
+
+---
+
+# 35. Contribution modellerer agentroller eksplisitt
+
+Bidrag modelleres gjennom entiteten `Contribution`.
+
+`Contribution` kobler en `Agent` til nøyaktig én målentitet og en rolle.
+
+I fase 1 kan `Contribution` kobles til:
+
+- `Work`
+- `Expression`
+- `Manifestation`
+- `Item`
+
+En rad i `Contribution` skal peke til nøyaktig én av disse målentitetene.
+
+Dette er en XOR-regel og skal håndheves av databasen.
+
+`Contribution` skal ha obligatoriske felter:
+
+- `agent`
+- `role`
+
+Samme kombinasjon av målentitet + agent + rolle skal ikke registreres flere ganger.
+
+---
+
 ## Bruk av dette dokumentet
 
 Dette dokumentet fungerer som en referanse for utvikling og migrasjoner.
