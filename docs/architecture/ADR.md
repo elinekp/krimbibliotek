@@ -1,13 +1,14 @@
 # Architecture Decision Log (ADR)
 
 Dette dokumentet registrerer viktige arkitekturvalg i prosjektet **Krimbiblioteket**.
-Hensikten er å dokumentere *hva som ble besluttet og hvorfor*, slik at beslutningene kan forstås senere.
+
+Hensikten er å dokumentere **hva som er besluttet og hvorfor**, slik at beslutningene kan forstås og etterprøves senere.
 
 Formatet følger en enkel ADR-struktur:
 
-* Context
-* Decision
-* Consequences
+- Context
+- Decision
+- Consequences
 
 ---
 
@@ -17,87 +18,105 @@ Formatet følger en enkel ADR-struktur:
 
 ### Context
 
-Prosjektet ønsker å følge etablerte bibliotekfaglige modeller og støtte avansert bibliografisk struktur. En enkel boktabell ville ikke støtte:
+Prosjektet ønsker å følge etablerte bibliotekfaglige modeller og støtte avansert bibliografisk struktur.
 
-* oversettelser
-* adaptasjoner
-* samlingsverk
-* flere utgaver
-* ulike medier
+En enkel boktabell ville ikke støtte blant annet:
+
+- oversettelser
+- adaptasjoner
+- samlingsverk
+- flere utgaver
+- ulike medier
 
 ### Decision
 
-Systemet implementerer LRM-inspirert struktur:
+Systemet implementerer en LRM-inspirert WEMI-struktur:
 
-```
-Work → Expression → Manifestation → Item
-```
+`Work → Expression → Manifestation → Item`
 
-Dette er prosjektets **fundamentale datamodell**.
+Dette er prosjektets grunnleggende bibliografiske kjernemodell.
 
 ### Consequences
 
-Fordeler:
+**Fordeler**
+- korrekt bibliotekfaglig modell
+- støtte for oversettelser, adaptasjoner og flere medier
+- tydelig skille mellom abstrakt verk, realisering, utgave og eksemplar
 
-* korrekt bibliografisk modell
-* støtte for oversettelser og adaptasjoner
-* fleksibilitet for flere medier
+**Ulemper**
+- mer kompleks modell
+- flere relasjoner i databasen
+- høyere registrerings- og modelleringsfriksjon enn i en flat modell
 
-Ulemper:
-
-* mer kompleks modell
-* flere relasjoner i databasen
-
-Beslutningen anses som **arkitekturkritisk og stabil**.
+Beslutningen anses som arkitekturkritisk og stabil.
 
 ---
 
 # ADR-002
 
-## Expression–Manifestation modellert som M2M
+## Expression–Manifestation modelleres som M2M via ExpressionManifestation
 
 ### Context
 
-Mange manifestasjoner inneholder flere verk eller uttrykk.
+Prosjektet må støtte både det vanlige mønsteret der én `Expression` materialiseres i flere `Manifestations`, og særtilfeller der én `Manifestation` inneholder flere `Expressions`.
 
-Eksempler:
+Dette gjelder blant annet:
 
-* omnibus
-* samlingsverk
-* antologier
+- samlingsverk
+- antologier
+- samleutgaver / omnibusutgaver
+- samme `Expression` i flere `Manifestations`
 
-En enkel 1-til-mange-relasjon ville ikke støtte dette.
+En ren direkte 1:M-modell ville ikke støtte dette tilstrekkelig.
 
 ### Decision
 
-Expression og Manifestation kobles via en mellomtabell:
+Relasjonen mellom `Expression` og `Manifestation` modelleres gjennom en eksplisitt koblingstabell:
 
-```
-ExpressionManifestation
-```
+`ExpressionManifestation`
 
-Tabellen inneholder foreløpig:
+I fase 1 har tabellen følgende felter:
 
-* position
-* context_note
+- `id`
+- `expression`
+- `manifestation`
+- `is_primary`
+
+Følgende regler fryses:
+
+- relasjonen er formelt M2M
+- samme kombinasjon av `expression` og `manifestation` kan ikke registreres flere ganger
+- en `Manifestation` kan ha flere `Expressions`
+- samme `Expression` kan forekomme i flere `Manifestations`
+- en `Manifestation` kan ha **maks én** primærkobling
+- vanlige utgaver skal normalt ha én primærkobling
+- antologier og enkelte samleutgaver kan ha ingen primærkobling
+- rekkefølge / sekvens utsettes
+- koblingstype / relasjonsrolle utsettes
+
+Normalmønsteret i praksis er fortsatt ofte:
+
+- én `Manifestation` til én `Expression`
+- én `Expression` til flere `Manifestations`
 
 ### Consequences
 
-Fordeler:
+**Fordeler**
+- støtter antologier, samlingsverk og omnibusutgaver
+- støtter både vanlige og mer komplekse bibliografiske situasjoner
+- gir eksplisitt og utvidbar modellering av en viktig relasjon
+- gjør det mulig å markere primærkobling uten å låse alle tilfeller til ett hoveduttrykk
 
-* støtter samlingsverk
-* støtter omnibus
-* fleksibel modell
-
-Ulemper:
-
-* mer kompleks enn enkel FK
+**Ulemper**
+- mer kompleks modell enn en enkel FK-løsning
+- krever tydelige modelleringsregler for grensen mellom bibliografisk sammenstilling og nytt `Work`
+- gir én ekstra koblingstabell i kjernen
 
 ---
 
 # ADR-003
 
-## Generisk bidragssystem (Agent / Role / Contribution)
+## Generisk bidragssystem: Agent / Role / Contribution
 
 ### Context
 
@@ -111,195 +130,129 @@ Eksempler:
 - forlag på `Manifestation`
 - tidligere eier eller giver på `Item`
 
-En modell med separate felter for hver rolle ville blitt lite fleksibel og vanskelig å utvide.
-
-Det måtte også avklares:
-
-- om `Agent` skal være egen entitet
-- om samme `Agent`-modell skal brukes for både personer og organisasjoner
-- hvordan `Contribution` skal kobles til flere nivåer i modellen
-- hvordan `Role` skal modelleres
-- hvordan databasen skal hindre ugyldige eller dupliserte bidrag
+Separate rollefelter per tabell ville blitt lite fleksibelt og vanskelig å utvide.
 
 ### Decision
 
 Bidrag modelleres gjennom tre tabeller:
 
-```
-Agent
-Role
-Contribution
-```
-**Agent**
+- `Agent`
+- `Role`
+- `Contribution`
 
-Agent er en egen entitet og brukes i fase 1 for både:
+`Contribution` er koblingstabellen mellom:
 
-- personer
-- organisasjoner
+- `Agent`
+- én målentitet
+- én rolle
 
-Agent har i fase 1 følgende felter:
+I fase 1 kan `Contribution` kobles til:
 
-- id
-- name
-- agent_type
-- wikidata_id
+- `Work`
+- `Expression`
+- `Manifestation`
+- `Item`
 
-name forstås som **foretrukket navn.**
+Én rad i `Contribution` skal peke til **nøyaktig én** av disse målentitetene.
 
-agent_type er obligatorisk og bruker et kontrollert vokabular. I fase 1 brukes minst:
-
-- person
-- organization
-
-wikidata_id er valgfritt, men modellen skal støtte minst én ekstern identifikator i fase 1.
-
-**Role**
-
-Role er kontrollert vokabular for agentroller i modellen.
-
-Role har i fase 1:
-
-- code
-- label
-
-code er primærnøkkel og representerer en stabil lokal, standardnær rollekode.
-
-Kodene skal kunne mappes entydig til relevant eksternt vokabular, normalt LoC relator codes.
-
-Roller ligger ikke på Agent, men i relasjonen mellom agenten og det agenten bidrar til.
-
-**Contribution**
-Contribution er en egen koblingstabell mellom:
-
-- Agent
-- en målentitet
-- en rolle
-
-I fase 1 kan Contribution kobles til:
-
-- Work
-- Expression
-- Manifestation
-- Item
-
-Én rad i Contribution skal peke til nøyaktig én av disse målentitetene.
-
-I fase 1 har Contribution følgende felter:
-
-- id
-- agent
-- work
-- expression
-- manifestation
-- item
-- role
-
-agent er obligatorisk.
-
-role er obligatorisk og peker til Role.
-
-Samme agent kan ha flere ulike roller mot samme entitet, men samme kombinasjon av målentitet + agent + rolle skal ikke registreres flere ganger.
-
-Når Contribution brukes på Item, er dette i fase 1 primært for strukturert proveniens, for eksempel:
+Når `Contribution` brukes på `Item`, er dette i fase 1 primært for strukturert proveniens, for eksempel:
 
 - tidligere eier
 - giver
 - annen navngitt proveniensaktør
 
-Aktiv låner, utlånshistorikk og annen sirkulasjonslogikk modelleres ikke gjennom Contribution i fase 1.
+Aktiv låner, utlånshistorikk og annen sirkulasjonslogikk modelleres ikke gjennom `Contribution` i fase 1.
 
 ### Consequences
 
-Fordeler:
-
+**Fordeler**
 - én konsistent modell for bidrag på tvers av nivåer
 - roller knyttes til relasjonen, ikke feilaktig til agenten alene
 - støtter både personer og organisasjoner
-- støtter strukturert proveniens på Item når det gir merverdi
-- kompatibelt med kontrollert rollemodell og senere linked-data-mapping
+- støtter strukturert proveniens på `Item` når det gir merverdi
+- gir godt grunnlag for senere linked-data-mapping og utvidelser
 
-Ulemper:
-
+**Ulemper**
 - mer kompleks spørring enn egne rollefelter
-- flere nullable mål-felter i Contribution
-- krever tydelige modelleringsregler for bruk av roller og Item-bidrag
+- flere nullable mål-felter i `Contribution`
+- krever tydelige modelleringsregler for bruk av roller og `Item`-bidrag
 
 ---
 
 # ADR-004
 
-## Serie kan knyttes til Work eller Manifestation
+## Series kan knyttes til Work eller Manifestation
 
 ### Context
 
-Serier kan representere ulike konsepter:
+Serier kan representere ulike konsepter som hører hjemme på ulike nivåer i modellen.
 
-Narrative serier:
+Eksempler:
 
-* Sherlock Holmes
-* Hercule Poirot
+- narrative serier
+- forlagsserier
 
-Forlagsserier:
-
-* Penguin Crime Classics
-* Gyldendal Krim
-
-Disse hører til ulike nivåer i modellen.
+Det var nødvendig å støtte begge uten å tvinge alle serier inn på samme nivå.
 
 ### Decision
 
 `SeriesMembership` kan kobles til:
 
-* Work
-* Manifestation
+- `Work`
+- `Manifestation`
+
+I fase 1 brukes `Series` for minst to serietyper:
+
+- `narrative`
+- `publisher_series`
+
+Dette innebærer at:
+
+- narrative serier ligger på `Work`
+- forlagsserier ligger på `Manifestation`
 
 ### Consequences
 
-Fordeler:
+**Fordeler**
+- korrekt modellering av ulike serietyper
+- tydelig skille mellom fortellingsmessig og publiseringsrelatert serie
+- støtter videre formidling og gjenfinning
 
-* korrekt modellering av forlagsserier
-* korrekt modellering av narrativ serie
-
-Ulemper:
-
-* litt mer kompleks datamodell
+**Ulemper**
+- litt mer kompleks modell
+- noen grensetilfeller må styres gjennom modelleringsregler
 
 ---
 
 # ADR-005
 
-## Karakterer som egne entiteter
+## Character modelleres som egen entitet på Work-nivå
 
 ### Context
 
-Kriminallitteratur er ofte sterkt karakterdrevet.
+Kriminallitteratur er ofte sterkt karakterdrevet, og karakterbasert navigasjon er en viktig formidlingsmulighet.
 
-Navigasjon basert på karakterer er en viktig formidlingsmulighet.
+Det måtte avklares om karakterer skulle være fritekst eller egen gjenbrukbar entitet.
 
 ### Decision
 
 Karakterer modelleres som egen entitet:
 
-```
-Character
-```
+`Character`
 
-Relasjon:
-
-```
-Work ↔ Character
-```
+Karakterer kobles til `Work`, ikke til `Expression`, `Manifestation` eller `Item`.
 
 ### Consequences
 
-Fordeler:
+**Fordeler**
+- mulig å navigere etter karakter
+- mulig å koble karakterer på tvers av verk
+- mulig å gjenbruke samme karakter på tvers av forfattere og relaterte verk
 
-* mulig å navigere etter karakter
-* mulig å koble karakterer på tvers av forfattere
-
-Ulemper:
-
-* karaktermodell kan bli mer kompleks senere
+**Ulemper**
+- krever egen koblingsmodell
+- navnevariasjoner må håndteres gjennom registreringspraksis i fase 1
+- mer avansert karaktermodell må komme senere dersom behovet oppstår
 
 ---
 
@@ -309,872 +262,290 @@ Ulemper:
 
 ### Context
 
-Det finnes mange eksterne identifikatorer:
+Det finnes mange eksterne identifikatorer, og en generell identifikatorstruktur ville gjøre systemet mer komplekst i første fase.
 
-* Wikidata
-* VIAF
-* NB
-* ISBN
-* ISNI
-* ORCID
-
-En generell modell for identifikatorer ville gjøre systemet mer komplekst.
+Prosjektet måtte avgrense hvilke identifikatorer som faktisk skulle få egne operative felter i fase 1.
 
 ### Decision
 
-I fase 1 brukes **egne felter for de viktigste identifikatorene**.
+I fase 1 brukes egne felter for et begrenset sett sentrale identifikatorer.
 
-Eksempler:
+I den nåværende fase-1-modellen gjelder dette eksplisitt blant annet:
 
-* wikidata_id
-* viaf_id
-* isbn
-* nb_sesamid
+- `wikidata_id`
+- `isbn`
+- `nb_sesamid`
+
+`wikidata_id` støttes eksplisitt i fase 1 som identifikator på relevante entiteter der dette er valgt.
+
+VIAF og andre identifikatorer utsettes til senere struktur.
 
 ### Consequences
 
-Fordeler:
+**Fordeler**
+- enklere implementasjon
+- enklere spørringer
+- lavere kompleksitet i fase 1
 
-* enklere implementasjon
-* enklere spørringer
+**Ulemper**
+- mindre fleksibelt enn en generell identifikatorstruktur
+- senere utvidelser krever egen modell eller mappinglag
 
-Ulemper:
-
-* mindre fleksibelt enn generell identifikatorstruktur
-
-Generell modell kan legges til senere.
+Generell identifikatorstruktur kan legges til senere.
 
 ---
 
 # ADR-007
 
-## Workflow-felter utsatt
+## Workflow-felter utsatt fra fase 1
 
 ### Context
 
 Felter som:
 
-* is_locked
-* is_manually_verified
-* metadata_provenance
+- `is_locked`
+- `is_manually_verified`
+- `metadata_provenance`
 
-tilhører arbeidsflyt og staging.
+tilhører arbeidsflyt, staging og styring av datainnhenting, ikke den bibliografiske kjernemodellen.
 
 ### Decision
 
-Disse feltene implementeres **ikke i fase 1**.
+Workflow-felter implementeres ikke i fase 1.
 
 ### Consequences
 
-Fordeler:
+**Fordeler**
+- enklere modell
+- tydeligere skille mellom bibliografisk kjerne og arbeidsflyt
+- mindre kompleksitet i første versjon
 
-* enklere modell
-* mindre kompleksitet i første versjon
-
-Ulemper:
-
-* må legges til senere når staging bygges
+**Ulemper**
+- staging- og verifiseringslogikk må legges til senere
+- enkelte arbeidsprosesser må i mellomtiden håndteres uten egne modellfelter
 
 ---
 
 # ADR-008
 
-## Lokale modelleringsregler etableres
+## Lokale modelleringsregler etableres for fase 1
 
 ### Context
 
-Mange bibliografiske beslutninger kan ikke løses kun gjennom databasedesign.
+Mange bibliografiske beslutninger kan ikke løses bare gjennom databasedesign.
 
 Eksempler:
 
-* når noe er nytt Work
-* når noe er nytt Expression
-* når noe er ny Manifestation
+- når noe er nytt `Work`
+- når noe er nytt `Expression`
+- når noe er ny `Manifestation`
+- hvordan særtilfeller og grensetilfeller skal håndteres
 
 ### Decision
 
-Prosjektet etablerer et internt dokument:
-
-```
-Lokale modelleringsregler for fase 1
-```
+Prosjektet etablerer et eget dokument for lokale modelleringsregler i fase 1.
 
 ### Consequences
 
-Fordeler:
+**Fordeler**
+- konsistent registreringspraksis
+- tydeligere skille mellom databasedesign og registreringsregler
+- lettere å forstå og videreføre modellen senere
 
-* konsistent registreringspraksis
-* lettere å forstå datamodellen senere
+**Ulemper**
+- krever vedlikehold av et eget normativt praksisdokument
+- databasen alene kan ikke bære all semantikk
 
 ---
 
 # ADR-009
 
-## Primærnøkler implementeres som UUID
+## UUID brukes som primærnøkler på hovedentiteter
 
 ### Context
 
-Systemet vil over tid integrere data fra eksterne kilder (Wikidata, Nasjonalbiblioteket, VIAF) og kan senere bli utvidet med API-er eller distribuerte datastrømmer. I slike scenarier kan tradisjonelle auto-increment-nøkler skape problemer ved datasammenslåing eller migrasjoner.
+Systemet vil over tid kunne integrere data fra eksterne kilder og senere bli utvidet med import, API-er eller migrasjoner.
+
+Tradisjonelle auto-increment-nøkler er mindre robuste i slike scenarier.
 
 ### Decision
 
-Alle hovedentiteter i databasen bruker **UUID som primærnøkkel**.
+Hovedentiteter i databasen bruker UUID som primærnøkkel.
 
 Dette gjelder blant annet:
 
-- Work
-- Expression
-- Manifestation
-- Item
-- Agent
-- Character
-- Series
-- Contribution
-- SeriesMembership
-- WorkRelationship
+- `Work`
+- `Expression`
+- `Manifestation`
+- `Item`
+- `Agent`
+- `Character`
+- `Series`
+- `Contribution`
+- `WorkRelationship`
+
+Koblingstabeller kan også ha egen `id` når dette er valgt som konsekvent mønster i modellen.
 
 ### Consequences
 
-Fordeler
+**Fordeler**
+- stabil identitet på tvers av miljøer og importer
+- enklere fremtidig sammenslåing og migrering
+- mindre risiko for nøkkelkollisjoner
 
-- robust ved import og sammenslåing av data
-- stabil identitet uavhengig av database
-- kompatibelt med Linked Data-tenkning og URI-baserte identifikatorer
-
-Ulemper
-
-- mindre lesbare nøkler for mennesker
-- noe større indekser
-
-Beslutningen anses som **arkitekturkritisk og stabil**.
+**Ulemper**
+- mindre lesbare nøkler
+- noe mer tungvint ved manuell inspeksjon og debugging
 
 ---
 
 # ADR-010
 
-## Relasjonspolicy: `SET_NULL`
+## Kontrollerte semantiske kategorier representeres med stabile lokale koder
 
 ### Context
 
-Under utvikling av katalogsystemet vil entiteter kunne endres eller fjernes underveis i modellering og datavask. Aggressiv kaskadesletting kan i slike situasjoner føre til utilsiktet datatap.
+Prosjektet bruker flere kontrollerte semantiske kategorier, blant annet:
+
+- språk
+- `expression_type`
+- `series_type`
+- `relation_type`
+- rollekoder
+- sjangerkoder
+- appellfaktorkoder
+
+Prosjektet trenger stabil intern bruk, men ønsker samtidig å kunne mappe til eksterne vokabularer senere.
 
 ### Decision
 
-Alle relasjoner i fase 1 bruker:
+Kontrollerte semantiske kategorier representeres i fase 1 med **stabile lokale koder**.
 
-```
-on_delete = SET_NULL
-```
+Kodene skal kunne mappes entydig til relevante eksterne vokabularer eller autoritetsregistre senere.
 
-Dette innebærer at relasjoner blir nullstilt dersom en relatert entitet slettes.
+I fase 1 lagres normalt ikke eksterne URI-er direkte i alle operative tabeller.
 
 ### Consequences
 
-Fordeler
+**Fordeler**
+- stabil og kontrollerbar intern semantikk
+- enklere fase-1-modell
+- mindre avhengighet av eksterne URI-strukturer i den operative databasen
+- godt grunnlag for senere mapping og interoperabilitet
 
-- beskytter mot utilsiktet sletting av store datamengder
-- tryggere under modellutvikling og datarensing
-
-Ulemper
-
-- kan etterlate null-relasjoner som må ryddes manuelt
-
-Relasjonspolicyen kan senere justeres (f.eks. til `CASCADE`) dersom praksis tilsier det.
+**Ulemper**
+- mappinglaget må bygges senere
+- man får ikke full linked-data-struktur direkte i fase 1
 
 ---
 
 # ADR-011
 
-## Kardinalitet mellom Work og Expression
+## Genre modelleres som kontrollert Work-taksonomi
 
 ### Context
 
-I WEMI-modellen representerer Work den abstrakte ideen bak et verk, mens Expression representerer realiseringen av denne ideen (tekst, lyd, film osv.).
+Sjanger beskriver verkets innhold og fortellingsform, og hører derfor til på `Work`-nivå.
 
-I et praktisk katalogsystem må det avklares om et Work alltid må ha minst én Expression.
+Prosjektet trenger kontrollert sjangerbruk, støtte for flere sjangre per verk og eksplisitt hierarki.
 
 ### Decision
 
-Kardinaliteten implementeres som:
+`Genre` modelleres som egen entitet med stabile lokale koder.
 
-```
-Work → 0..n Expression
-Expression → 1 Work
-```
+I fase 1 har `Genre` følgende felter:
 
-Det betyr at:
+- `code`
+- `label`
+- `parent_genre`
 
-- et Work kan eksistere uten Expression
-- en Expression må alltid tilhøre ett Work
+Koblingen mellom `Work` og `Genre` modelleres som egen koblingstabell:
+
+`WorkGenre`
+
+I fase 1 har `WorkGenre` følgende felter:
+
+- `id`
+- `work`
+- `genre`
+
+Følgende regler fryses:
+
+- `Genre` ligger på `Work`-nivå
+- ett `Work` kan ha flere sjangre
+- samme kombinasjon av `work` og `genre` kan ikke registreres flere ganger
+- hierarki er eksplisitt med i fase 1
+- eksterne URI-er utsettes
 
 ### Consequences
 
-Fordeler
+**Fordeler**
+- kontrollert og gjenbrukbar sjangermodell
+- støtte for krysskategorisering
+- støtte for eksplisitt sjangerhierarki
+- godt grunnlag for senere mapping og videreutvikling
 
-- støtter konseptuelle verk som registreres før konkrete realiseringer
-- samsvarer med LRM-modellen
-
-Ulemper
-
-- det kan oppstå Work-poster uten Expression dersom registrering ikke fullføres
-
-Dette anses som en **grunnleggende strukturregel i modellen**.
+**Ulemper**
+- krever vedlikehold av eget sjangervokabular
+- grensene mot appellfaktor og tematikk må styres gjennom modelleringsregler
 
 ---
 
 # ADR-012
 
-## Expression representerer realiseringstype (content type)
+## AppealFactor modelleres som kontrollert Work-vokabular
 
 ### Context
 
-I WEMI/LRM representerer Expression hvordan et verk realiseres. Ulike realiseringer av samme verk – for eksempel tekst og lydbok – er ikke bare forskjellige utgaver, men ulike uttrykk for verket.
+Appellfaktorer beskriver leseropplevelse og fortellingskarakter, og hører derfor til på `Work`-nivå.
 
-Systemet trenger derfor et felt som beskriver **hvilken type realisering** en Expression representerer.
-
-### Decision
-
-Expression får feltet:
-
-```
-expression_type
-```
-
-Dette feltet beskriver realiseringstypen, for eksempel:
-
-```
-spoken_word
-moving_image
-still_image
-```
-Dette feltet representeres i fase 1 som en stabil lokal kode som skal kunne mappes entydig til **RDA Content Type.**
-
-### Consequences
-
-Fordeler
-
-- gjør det mulig å skille tekst, lydbok og andre realiseringer
-- kompatibelt med RDA/LRM-modellen
-- gjør det mulig å knytte roller som oversetter eller innleser korrekt
-
-Ulemper
-
-- krever et kontrollert vokabular for realiseringstyper
-
-Beslutningen anses som **arkitekturkritisk.**
-
----
-
-# ADR-013
-
-## Språk registreres på Expression
-
-### Context
-
-Oversettelser representerer nye realiseringer av et verk. Språk er derfor en egenskap ved Expression, ikke Work eller Manifestation.
-
-Systemet må derfor registrere språk på Expression-nivå.
+Prosjektet ønsker å støtte appellfaktorer i tråd med lesersørvis-metodikk, med overordnede appellfaktorer og underordnede appelltermer.
 
 ### Decision
 
-Expression får feltet:
+`AppealFactor` modelleres som egen entitet med stabile lokale koder.
 
-```
-language_code
-```
-
-Språk kodes etter **LOC Language Vocabulary**, som baserer seg på ISO-639-2 bibliografiske koder.
-
-Eksempler:
-
-```
-eng
-nor
-ger
-fre
-```
-
-### Consequences
-
-Fordeler
-
-- følger bibliotekfaglig praksis
-- kompatibelt med MARC og Linked Data
-- mulig å koble senere til URI-er fra id.loc.gov
-
-Ulemper
-
-- tretegnskoder i stedet for kortere ISO-639-1
-
-Beslutningen anses som **arkitekturkritisk.**
-
----
-
-# ADR-014
-
-## Tekst og lydbok er ulike Expressions
-
-### Context
-
-Et verk kan realiseres både som tekst og som lydbok. Disse representerer ulike realiseringer av verket og kan ha ulike bidragsytere (for eksempel innleser).
-
-Det må derfor avklares om dette skal modelleres som ulike Expressions eller kun som ulike Manifestations.
-
-### Decision
-
-Tekst og lydbok modelleres som **ulike Expressions.**
-
-Eksempel:
-
-```
-Work
- ├ Expression (eng, text)
- └ Expression (eng, spoken_word)
-```
-
-### Consequences
-
-Fordeler
-
-- korrekt modellering av realiseringstype
-- gjør det mulig å knytte innleser til riktig nivå
-- kompatibelt med RDA Content Type
-
-Ulemper
-
-- flere Expressions per Work
-
-Beslutningen anses som **strukturkritisk.**
-
----
-
-# ADR-015
-
-## Manifestation representerer bibliografisk identitet på utgavenivå
-
-### Context
-
-Det måtte avklares hva Manifestation konkret representerer i modellen, og hvilke typer forskjeller som skal føre til ny Manifestation.
-
-I prosjektet er det viktig å skille tydelig mellom:
-
-- Expression som realisering av et verk
-- Manifestation som den konkrete publiserte utgaven
-
-Det måtte også avklares hvor identifikatorer som ISBN og NB-identifikator skal ligge, og hvordan forlag skal modelleres.
-
-### Decision
-
-Manifestation representerer **bibliografisk identitet på utgavenivå**.
-
-Dette innebærer at følgende modelleres som ulike Manifestations av samme Expression:
-
-- hardcover
-- paperback
-- epub
-- pdf
-
-Følgende felter plasseres på Manifestation-nivå i fase 1:
-
-- `isbn`
-- `nb_sesamid`
-- `publication_year`
-
-Forlag hører til `Manifestation`-nivået og modelleres fra start via `Contribution / Agent`.
-
-Carrier/media type forstås prinsipielt som et Manifestation-attributt, men konkret felt for dette utsettes til senere fase.
-
-### Consequences
-
-Fordeler
-
-- tydelig skille mellom Expression og Manifestation
-- korrekt modellering av konkrete utgaver
-- ISBN og NB-identifikator plasseres på riktig nivå
-- konsekvent rollemodell ved at forlag håndteres via Contribution / Agent
-
-Ulemper
-
-- høyere registreringsfriksjon i fase 1 enn ved rene tekstfelt
-- enkelte praktiske utgivelsesattributter må komme senere
-
-Beslutningen anses som arkitekturkritisk og stabil.
-
----
-
-# ADR-016
-
-## Item holdes på rent eksemplarnivå
-
-### Context
-
-Prosjektet måtte avklare hva `Item` konkret skal representere i modellen, og hvilke typer data som hører hjemme der.
-
-Det var særlig behov for å skille tydelig mellom:
-
-- bibliografiske data som beskriver en publisert utgave
-- eksemplarspesifikke data som gjelder ett fysisk objekt i samlingen
-
-Det måtte også avklares hvordan proveniens skulle håndteres i fase 1, og om et felt som `is_first_edition` skulle brukes på `Item`.
-
-### Decision
-
-`Item` holdes på rent eksemplarnivå.
-
-Dette innebærer at `Item` brukes til data som gjelder det konkrete fysiske eksemplaret, for eksempel:
-
-- `shelf_location`
-- `provenance_notes`
-- andre lokale eksemplarnotater
-
-Bibliografiske utgavedata skal ikke ligge på `Item`.
-
-Eksempler på data som ikke hører til `Item`:
-
-- ISBN
-- `nb_sesamid`
-- utgivelsesår
-- utgaveinformasjon
-
-Slike data hører til `Manifestation`.
-
-I fase 1 håndteres proveniens normalt gjennom:
-
-- `provenance_notes`
-
-Samtidig kan `Contribution` brukes på `Item` når proveniens eller eierskap er viktig nok til å struktureres.
-
-Feltet `is_first_edition` brukes ikke på `Item`.
-
-Prosjektet innfører heller ikke et eget boolsk felt for dette på `Manifestation`, siden vanlig utgaveinformasjon anses som tilstrekkelig.
-
-### Consequences
-
-Fordeler
-
-- tydelig skille mellom bibliografisk nivå og eksemplarnivå
-- mindre risiko for dobbeltføring og inkonsistens
-- enklere fase-1-modell
-- mulig å utvide senere med mer strukturert proveniens uten å bryte grunnmodellen
-
-Ulemper
-
-- mindre strukturert proveniens i første fase
-- enkelte copy-specific bibliografiske særtrekk må eventuelt håndteres senere
-
----
-
-# ADR-017
-
-## Series og SeriesMembership strammes i fase 1
-
-### Context
-
-Prosjektet har allerede besluttet at serier modelleres gjennom:
-
-```
-Series
-SeriesMembership
-```
-
-og at `SeriesMembership` kan kobles til enten `Work` eller `Manifestation`.
-
-Etter tabellgjennomgangen var det nødvendig å presisere flere strukturkritiske spørsmål:
-
-- hvilke serietyper som støttes i fase 1
-- om én medlemskapsrad kan peke til både `Work` og `Manifestation`
-- hvordan duplikatmedlemskap skal forhindres
-- hvilke felter som faktisk skal inngå i fase 1
-
-Dette måtte avklares nå for å beskytte modellen mot uklar semantikk og dyr opprydding senere.
-
-### Decision
-
-`Series` beholdes som egen entitet, og `SeriesMembership` beholdes som egen koblingsentitet.
-
-I fase 1 får `Series` følgende felter:
-
-- `id`
-- `title`
-- `series_type`
-
-`series_type` er obligatorisk og bruker et stramt kontrollert vokabular i fase 1:
-
-- `narrative`
-- `publisher_series`
-
-Dette betyr at:
-
-- narrative serier modelleres på `Work`-nivå
-- forlagsserier modelleres på `Manifestation`-nivå
-
-I fase 1 får `SeriesMembership` følgende felter:
-
-- `id`
-- `series`
-- `work`
-- `manifestation`
-- `part_number`
-- `part_display`
-
-Følgende regler fryses som strukturkrav:
-
-- én rad i `SeriesMembership` skal peke til enten `Work` eller `Manifestation`, aldri begge
-- databasen skal håndheve at nøyaktig én av `work` og `manifestation` er fylt ut
-- databasen skal håndheve unikt medlemskap per (`series`, `work`)
-- databasen skal håndheve unikt medlemskap per (`series`, `manifestation`)
-- `part_number` er valgfritt
-- `context_note` utsettes fra fase 1
-- seriehierarki, som `parent_series`, utsettes til senere fase
-
-### Consequences
-
-Fordeler
-
-- tydelig semantisk skille mellom narrativ serie og forlagsserie
-- mindre risiko for duplikater og uklare seriekoblinger
-- enklere validering, spørring og senere UI-bygging
-- stram fase-1-modell uten unødvendige støttefelter
-
-Ulemper
-
-- mindre fleksibilitet for uvanlige eller tvetydige serietilfeller i første fase
-- hierarkiske serier og mer avanserte seriemodeller må komme senere
-- noen grensetilfeller må håndteres gjennom modelleringsregler, ikke gjennom ekstra databasefelter
-
----
-
-# ADR-018
-
-## Character strammes i fase 1
-
-### Context
-
-Prosjektet hadde allerede besluttet at karakterer skal modelleres som egne entiteter, fordi kriminallitteratur ofte er sterkt karakterdrevet og fordi karakterbasert navigasjon er en viktig formidlingsmulighet.
-
-Etter tabellgjennomgangen var det nødvendig å presisere flere spørsmål:
-
-- hvilket nivå karakterer skal kobles til
-- om koblingen skal gå via egen koblingstabell
-- hvilke felter `Character` faktisk skal ha i fase 1
-- om samme karakter kan kobles flere ganger til samme verk
-
-Dette måtte avklares nå for å beskytte modellen mot uklar praksis og unødvendig kompleksitet senere.
-
-### Decision
-
-`Character` beholdes som egen entitet.
-
-Karakterer kobles til `Work`-nivået.
-
-Koblingen mellom verk og karakter modelleres gjennom en egen koblingstabell:
-
-```
-text
-WorkCharacter
-```
-I fase 1 får Character følgende felter:
-
-- `id`
-- `name`
-
-Følgende regler fryses som strukturkrav:
-
-- Character er egen entitet
-- karakterer kobles til Work, ikke til Expression, Manifestation eller Item
-- koblingen går via egen koblingstabell
-- samme karakter kan ikke kobles flere ganger til samme Work
-- variantnavn utsettes til senere fase
-- karakterroller som hovedkarakter / bikarakter utsettes til senere fase
-
-### Consequences
-
-Fordeler
-
-- tydelig plassering av karakterer på riktig nivå i modellen
-- støtte for gjenbruk av samme karakter på tvers av flere verk
-- støtte for navigasjon og søk på karakter
-- stram og enkel fase-1-modell
-
-Ulemper
-
-- navnevariasjoner må håndteres gjennom registreringspraksis i første fase
-- mer avansert karaktermodell må komme senere dersom behovet oppstår
-
----
-
-# ADR-019
-
-## WorkCharacter fryses som eksplisitt koblingstabell i fase 1
-
-### Context
-
-Prosjektet har allerede besluttet at `Character` skal være en egen entitet, at karakterer hører til `Work`-nivået, og at samme karakter skal kunne gjenbrukes på tvers av flere verk.
-
-Etter den videre tabellgjennomgangen var det nødvendig å presisere hvordan koblingen mellom `Work` og `Character` skal modelleres i fase 1.
-
-Det måtte avklares:
-
-- om koblingen skal være en eksplisitt tabell i modellen
-- om tabellen bare skal koble `Work` og `Character`
-- om samme kombinasjon skal kunne registreres flere ganger
-- hvilke felter koblingstabellen faktisk skal ha i fase 1
-- hvilke relasjonsfelter som bevisst skal utsettes
-
-Dette måtte avklares nå for å beskytte modellen mot uklar relasjonspraksis og for å holde karaktermodellen konsistent med resten av fase-1-arkitekturen.
-
-### Decision
-
-Koblingen mellom `Work` og `Character` modelleres gjennom en eksplisitt koblingstabell:
-
-```
-WorkCharacter
-```
-
-`WorkCharacter` beholdes som egen tabell i modellen.
-
-I fase 1 får `WorkCharacter` følgende felter:
-
-- `id`
-- `work`
-- `character`
-
-Følgende regler fryses som strukturkrav:
-
-- `WorkCharacter` kobler bare `Work` og `Character`
-- samme kombinasjon av `work` og `character` kan ikke registreres flere ganger
-- databaseunikhet skal håndheves for (`work`, `character`)
-- `WorkCharacter` har ingen ekstra relasjonsfelter i fase 1
-- rollemarkering på relasjonen utsettes
-- visningsrekkefølge eller prioritet utsettes
-- note, kilde og andre metadata på relasjonen utsettes
-
-### Consequences
-
-Fordeler
-
-- tydelig og eksplisitt modellering av mange-til-mange mellom `Work` og `Character`
-- konsistent med prosjektets praksis om å synliggjøre koblingsentiteter som egne tabeller
-- enkelt å håndheve dataintegritet gjennom databaseunikhet
-- godt utgangspunkt for senere utvidelser av relasjonen uten å bygge om kjernen
-
-Ulemper
-
-- én ekstra tabell i modellen
-- relasjonen kan oppleves mer formell enn en ren skjult M2M-kobling
-- fremtidige behov som karakterrolle må fortsatt komme som senere utvidelser
-
----
-
-# ADR-020
-
-## WorkRelationship fryses som eksplisitt koblingstabell i fase 1
-
-### Context
-
-Prosjektet har allerede besluttet at intellektuelle relasjoner mellom verk skal modelleres eksplisitt gjennom `WorkRelationship`.
-
-Etter tabellgjennomgangen var det nødvendig å presisere:
-
-- at `WorkRelationship` bare skal koble `Work` til `Work`
-- at relasjonen skal være retningsbestemt
-- at relasjonstype skal være obligatorisk
-- at duplikater og selvrelasjoner ikke skal tillates
-- hvilke felter tabellen faktisk skal ha i fase 1
-- hva som skal håndheves i databasen versus i modelleringsregler
-
-Dette måtte avklares nå for å beskytte modellen mot uklar relasjonspraksis og for å holde verkrelasjoner tydelig adskilt fra bibliografisk sammenstilling i `ExpressionManifestation`.
-
-### Decision
-
-`WorkRelationship` beholdes som en eksplisitt koblingstabell i modellen.
-
-Tabellen kobler bare:
-
-- `source_work`
-- `target_work`
-
-Begge peker til `Work`.
-
-Relasjonen er retningsbestemt.
-
-I fase 1 får `WorkRelationship` følgende felter:
-
-- `id`
-- `source_work`
-- `target_work`
-- `relation_type`
-
-Følgende regler fryses som strukturkrav:
-
-- `WorkRelationship` kobler bare `Work` til `Work`
-- `relation_type` er obligatorisk
-- `relation_type` er en kontrollert kode
-- samme kombinasjon av (`source_work`, `target_work`, `relation_type`) kan ikke registreres flere ganger
-- `source_work` og `target_work` kan ikke være samme verk
-- note, kilde, usikkerhet og annen relasjonsmetadata utsettes
-
-Semantikken for relasjonstyper, inkludert valg av relasjonstyper og håndtering av inverse former, styres av modelleringsregler og ikke av databasen alene.
-
-### Consequences
-
-Fordeler
-
-- tydelig og eksplisitt modellering av verkrelasjoner
-- mulig å bevare relasjonstype som data
-- retningsbestemt modell som tåler ikke-symmetriske relasjoner
-- enkel håndheving av dataintegritet gjennom databasekrav
-- godt grunnlag for senere utvidelser uten ombygging av kjernen
-
-Ulemper
-
-- én ekstra koblingstabell i modellen
-- krever tydelige modelleringsregler for relasjonstyper
-- mer avansert relasjonslogikk må komme senere dersom behovet oppstår
-
----
-
-# ADR-021
-
-## Kontrollerte semantiske kategorier representeres med stabile lokale koder i fase 1
-
-### Context
-
-Prosjektet ønsker å legge til rette for linked data og fremtidig entydig kobling til relevante autoritetsregistre og vokabularer.
-
-Dette gjelder ikke bare eksterne identifikatorer på entiteter, men også kontrollerte semantiske kategorier i modellen, som:
-
-- typer
-- relasjoner
-- roller
-- andre kontrollerte vokabularverdier
-
-Uten stabile koder vil semantikken bli bundet til lokale etiketter eller fritekst, noe som gjør senere mapping, validering og interoperabilitet vanskeligere.
-
-### Decision
-
-I fase 1 skal kontrollerte typer, relasjoner, roller og andre semantiske kategorier representeres med stabile lokale koder.
-
-Slike koder skal kunne mappes entydig til relevante eksterne autoritetsregistre eller vokabularer der dette er faglig relevant.
-
-Eksempler på slike registre og vokabularer kan være:
-
-- Wikidata
-- RDA Registry / RDA Vocabularies
-- LoC Language Vocabulary
-- LoC relator codes
-
-I fase 1 lagres normalt ikke eksterne URI-er direkte i alle operative tabeller.
-
-I stedet brukes stabile lokale koder med entydig mapping i regel- eller vokabularlaget.
-
-### Consequences
-
-Fordeler
-
-- bedre linked-data-beredskap
-- mindre risiko for fritekstdrift og lokal variasjon
-- tydeligere semantikk i modellen
-- enklere senere eksport, mapping og interoperabilitet
-
-Ulemper
-
-- krever strengere vokabularforvaltning
-- krever at lokale koder holdes stabile over tid
-- noe mer dokumentasjonsarbeid i fase 1
-
----
-
-# ADR-023
-
-## Role modelleres som egen kontrollert entitet i fase 1
-
-### Context
-
-Prosjektet har besluttet at roller ikke skal ligge direkte på `Agent`, men i relasjonen mellom en agent og en målentitet gjennom `Contribution`.
-
-Dette krever en egen modell for roller.
-
-Det måtte avklares:
-
-- om `Role` skal være egen entitet
-- om roller skal være kontrollert vokabular
-- om samme rollemodell skal brukes på tvers av flere nivåer i modellen
-- hvordan linked-data-prinsippet skal brukes på roller
-- om `Role` skal bruke samme primærnøkkelstrategi som hovedentitetene
-
-### Decision
-
-`Role` modelleres som en egen entitet i fase 1.
-
-`Role` brukes som kontrollert vokabular for roller i `Contribution`.
-
-I fase 1 har `Role` følgende felter:
+I fase 1 har `AppealFactor` følgende felter:
 
 - `code`
 - `label`
+- `parent_appeal_factor`
+- `definition`
+- `scope_note`
 
-`code` er primærnøkkel for `Role` i fase 1.
+Koblingen mellom `Work` og `AppealFactor` modelleres som egen koblingstabell:
 
-`code` skal være:
+`WorkAppealFactor`
 
-- stabil
-- lokal
-- standardnær
+I fase 1 har `WorkAppealFactor` følgende felter:
 
-Kodene skal kunne mappes entydig til relevant eksternt vokabular der dette er faglig relevant, normalt LoC relator codes, eller annet passende register når det er mer relevant.
+- `id`
+- `work`
+- `appeal_factor`
 
-`label` er menneskelesbar visningstekst.
+Følgende regler fryses:
 
-Det brukes bare én enkel `label` i fase 1.
-
-Egne operative felt som `uri`, `external_code` eller `vocabulary` inngår ikke i fase 1, men modellen skal ikke stenge for at slik mapping kan legges til senere.
+- `AppealFactor` ligger på `Work`-nivå
+- ett `Work` kan ha flere appellfaktorer
+- samme kombinasjon av `work` og `appeal_factor` kan ikke registreres flere ganger
+- hierarki er eksplisitt med i fase 1
+- `definition` og `scope_note` er med i fase 1
+- synonymer utsettes som operativ fase-1-funksjonalitet
+- modellen skal tåle synonymstruktur senere
+- eksterne URI-er utsettes
+- prioritet / styrkegrad på koblingen utsettes
 
 ### Consequences
 
-Fordeler
+**Fordeler**
+- støtte for strukturert appellbeskrivelse
+- kompatibelt med lesersørvis-orientert vokabulararbeid
+- eksplisitt hierarki og definisjonsstøtte fra start
+- godt grunnlag for senere synonymforvaltning
 
-- tydelig skille mellom agent og rolle
-- samme rollemodell kan brukes på tvers av `Work`, `Expression`, `Manifestation` og `Item`
-- støtter kontrollert registrering og senere linked-data-mapping
-- mer lesbar og naturlig modell enn å bruke UUID på en liten kontrolltabell
-
-Ulemper
-
-- én ekstra kontrolltabell
-- krever vedlikehold av kontrollert vokabular
-- hvilke roller som er gyldige på hvilke nivåer må styres i modelleringsregler
+**Ulemper**
+- krever vedlikehold av eget appellvokabular
+- grensene mot sjanger og tematikk må styres i modelleringsreglene
+- synonymstruktur må legges til senere dersom den skal brukes operativt
 
 ---
-
-# Fremtidige ADR-temaer
-
-Følgende temaer vil sannsynligvis kreve nye ADR-beslutninger senere:
-
-* ekstern identifikatorstruktur
-* tittelmodell
-* navnevarianter
-* Expression-utvidelser
-* staging-system
-* metadata-proveniens
-* anbefalingssystem
-
----
-
-## En liten anbefaling til slutt
-
-Neste naturlige steg i arbeidet vårt vil være:
-
-**systematisk gjennomgang av hver tabell**, i denne rekkefølgen:
-
-1. Work
-2. Expression
-3. Manifestation
-4. Item
-5. Series
-6. Agent
-7. Contribution
-8. Character
-9. Genre / AppealFactor
-
-
