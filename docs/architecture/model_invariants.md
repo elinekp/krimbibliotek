@@ -265,6 +265,18 @@ I fase 1 kan `Contribution` kobles til nøyaktig én av:
 - `manifestation`
 - `item`
 
+## 13.1 Contribution skal peke til nøyaktig én målentitet
+
+Regel:
+- en `Contribution` skal peke til nøyaktig én av følgende:
+  - `Work`
+  - `Expression`
+  - `Manifestation`
+  - `Item`
+- samme rad kan ikke peke til flere mål samtidig
+- samme rad kan heller ikke mangle målentitet helt
+
+Dette er en hard strukturregel, ikke bare en registreringsregel.
 
 ---
 
@@ -408,7 +420,15 @@ Regler:
 Unik regel:
 - samme kombinasjon av `source_work`, `target_work` og `relation_type` kan ikke registreres flere ganger
 
+## 23.1 WorkRelationship er retningsbestemt og skal ikke være symmetrisk som datamønster
 
+Regel:
+- `WorkRelationship` er en retningsbestemt relasjon mellom `source_work` og `target_work`
+- samme kombinasjon av `source_work`, `target_work` og `relation_type` kan ikke registreres flere ganger
+- modellen skal ikke behandle omvendt retning som samme rad
+
+Konsekvens:
+- relasjonens retning er en del av selve identiteten til relasjonen
 ---
 
 ## 24. Genre er kontrollert Work-taksonomi
@@ -522,6 +542,15 @@ Typiske forskjeller som kan representere ulike `Manifestations`:
 - epub
 - pdf
 
+## 31.1 Manifestation kan ha egen tittel uten å opphøre å være manifestation-nivå
+
+Regel:
+- `Manifestation` kan ha eget `title`-felt i fase 1
+- dette endrer ikke nivåplasseringen: tittelen representerer fortsatt manifestation-nivå, ikke `Work` eller `Expression`
+- en egen manifestation-tittel skal ikke brukes som begrunnelse for å flytte bibliografisk identitet opp eller ned i WEMI-strukturen
+
+Konsekvens:
+- modellen kan uttrykke sammensatte eller tydelig navngitte utgaver uten å bryte nivåskillet
 
 ---
 
@@ -546,14 +575,19 @@ Dette endrer ikke regelen om at sirkulasjonslogikk ikke inngår i fase 1
 
 ---
 
-## 34. Relasjonspolicy i fase 1 er SET_NULL
+## 34. Relasjonspolicy i fase 1 er RESTRICT for obligatoriske relasjoner og SET_NULL for valgfrie
 
-Der fase-1-modellen bruker nullable relasjoner som del av designet, er relasjonspolicy i fase 1:
+Relasjonspolicy i fase 1 følger denne hovedregelen:
 
-`SET_NULL`
+- obligatoriske relasjoner bruker `RESTRICT`
+- valgfrie relasjoner bruker `SET_NULL`
 
 Regel:
-- sletting av referert rad skal ikke automatisk føre til cascading sletting som bryter hovedprinsippet for fase-1-modellen, med mindre en eksplisitt arkitekturbeslutning senere endrer dette
+- sletting skal ikke kunne bryte obligatoriske strukturelle sammenhenger i kjernemodellen
+- sletting av en referert rad skal kunne frikoble valgfrie relasjoner uten cascading sletting når relasjonen eksplisitt er modellert som valgfri
+
+Konsekvens:
+- databasens slettelogikk skal støtte modellens semantikk, ikke undergrave den
 
 
 ---
