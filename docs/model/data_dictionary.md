@@ -68,6 +68,8 @@ WEMI: Work
 ### Merknad
 `Work` er overordnet nivå for blant annet sjanger, appellfaktorer, karakterer og verkrelasjoner.
 
+### Merknad
+`title_preferred` er foretrukket navneform i fase 1, ikke full nomen-struktur.
 
 ---
 
@@ -255,6 +257,8 @@ Work-relatert støtteentitet
 ### Nøkler og referanser
 - PK: `id`
 
+### Merknad
+`name` er foretrukket navneform i fase 1, ikke full nomen-struktur.
 
 ---
 
@@ -314,7 +318,7 @@ Selvrelasjon er ikke tillatt.
 ## 12. Agent
 
 ### Formål
-Representerer en aktør, enten person eller organisasjon.
+Representerer en aktør, enten person eller kollektiv agent.
 
 ### Nivå
 Støtteentitet
@@ -324,15 +328,17 @@ Støtteentitet
 | Felt | Type | Obligatorisk | Beskrivelse |
 |---|---|---:|---|
 | `id` | UUID | ja | Primærnøkkel for agent |
-| `name` | string | ja | Foretrukket navn på agenten |
-| `agent_type` | string / kontrollert kode | ja | Type agent, for eksempel person eller organisasjon |
+| `name` | string | ja | Foretrukket navn på agenten i fase 1 |
+| `agent_type` | string / kontrollert kode | ja | Type agent. I fase 1 brukes `person` eller `collective_agent` |
 | `wikidata_id` | string | nei | Ekstern identifikator til Wikidata når kjent |
 
 ### Nøkler og referanser
 - PK: `id`
 
 ### Merknad
-`viaf_id` inngår ikke som eget fase-1-felt.
+- `name` er foretrukket navneform i fase 1, ikke full nomen-struktur
+- `viaf_id` inngår ikke som eget fase-1-felt
+- rikere struktur for variantnavn, pseudonymer og andre appellasjoner utsettes til senere modellering
 
 
 ---
