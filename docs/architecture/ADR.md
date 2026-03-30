@@ -549,3 +549,102 @@ Følgende regler fryses:
 - synonymstruktur må legges til senere dersom den skal brukes operativt
 
 ---
+
+---
+
+# ADR-013
+
+## Manifestation kan ha eget title-felt i fase 1
+
+### Context
+
+Under implementasjonen ble det tydelig at `Manifestation` ikke alltid kan identifiseres godt nok bare gjennom ISBN, år og kobling til uttrykk.
+
+Noen utgaver har en egen manifestation-identitet som bør kunne uttrykkes eksplisitt i modellen.
+
+Dette gjelder særlig:
+- antologier
+- samleutgaver
+- manifestasjoner med flere expressions
+- andre sammensatte utgivelser
+
+Prosjektet måtte derfor ta stilling til om `Manifestation` skulle kunne ha eget tittelfelt i fase 1.
+
+### Decision
+
+`Manifestation` får eget valgfritt felt:
+
+- `title`
+
+Feltet brukes når utgaven har en egen tittel eller tydelig manifestation-identitet.
+
+Feltet er valgfritt og skal ikke tvinges brukt i vanlige enkelttilfeller der det ikke tilfører presisjon.
+
+### Consequences
+
+**Fordeler**
+- bedre bibliografisk presisjon
+- bedre brukbarhet i admin og grensesnitt
+- tydeligere identifikasjon av sammensatte utgaver
+
+**Ulemper**
+- litt rikere manifestation-modell i fase 1
+- krever skjønn i registreringspraksis
+
+Valget endrer ikke nivåplasseringen i WEMI.
+Et manifestation-spesifikt tittelfelt er fortsatt manifestation-nivå, ikke work- eller expression-nivå.
+
+---
+
+---
+
+# ADR-014
+
+## WorkRelationship registreres med fast retning fra source til target og leses fra target til source
+
+### Context
+
+`WorkRelationship` er en retningsbestemt verkrelasjon.
+
+Under implementasjonen ble det tydelig at feltnavn alene ikke er nok til å sikre konsistent registrering og lesing. Uten en fast regel er det stor risiko for at like relasjoner registreres i motsatt retning.
+
+Prosjektet måtte derfor avklare både semantisk retning og praktisk lesemåte.
+
+### Decision
+
+I fase 1 forstås:
+
+- `source_work` som det primære eller opphavlige verket
+- `target_work` som det sekundære eller avledede verket
+
+Relasjonen skal leses slik:
+
+- `target_work` (`relation_type`) `source_work`
+
+Eksempel:
+- tegneserieversjonen `adaptation_of` romanverket
+
+Konsekvens for vokabular:
+- `relation_type` skal formuleres i denne retningen
+- bruk koder som:
+  - `adaptation_of`
+  - `translation_of`
+  - `abridgement_of`
+  - `graphic_novelization_of`
+- ikke koder som:
+  - `adapted_as`
+  - `translated_into`
+  - `has_adaptation`
+
+### Consequences
+
+**Fordeler**
+- konsistent registreringspraksis
+- mindre risiko for speilvendte dubletter
+- tydeligere semantikk i admin, søk og videre modellarbeid
+
+**Ulemper**
+- krever eksplisitt dokumentasjon og brukeropplæring
+- er ikke nødvendigvis intuitivt ved første møte med feltnavnene
+
+Denne retningen er en del av den operative fase-1-modellen og skal støttes i dokumentasjon og admin.
