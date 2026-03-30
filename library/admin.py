@@ -34,8 +34,25 @@ class ExpressionAdmin(admin.ModelAdmin):
 
 @admin.register(Manifestation)
 class ManifestationAdmin(admin.ModelAdmin):
-    list_display = ("__str__",)
-    search_fields = ("isbn", "nb_sesamid")
+    list_display = ("title", "isbn", "publication_year", "nb_sesamid")
+    search_fields = ("title", "isbn", "nb_sesamid", "edition_statement")
+
+class ExpressionManifestationAdminForm(forms.ModelForm):
+    class Meta:
+        model = ExpressionManifestation
+        fields = "__all__"
+        labels = {
+            "expression": "Uttrykk",
+            "manifestation": "Manifestasjon",
+            "is_primary": "Primær kobling",
+        }
+        help_texts = {
+            "is_primary": (
+                "Kryss av når dette er hoveduttrykket for manifestasjonen. "
+                "Vanlige utgaver skal normalt ha én primærkobling. "
+                "Antologier og samleutgaver kan ha ingen."
+            ),
+        }
 
 
 @admin.register(Item)
@@ -46,6 +63,7 @@ class ItemAdmin(admin.ModelAdmin):
 
 @admin.register(ExpressionManifestation)
 class ExpressionManifestationAdmin(admin.ModelAdmin):
+    form = ExpressionManifestationAdminForm
     list_display = ("expression", "manifestation", "is_primary")
     list_filter = ("is_primary",)
     autocomplete_fields = ("expression", "manifestation")

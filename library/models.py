@@ -70,13 +70,9 @@ class Manifestation(models.Model):
     def __str__(self):
         parts = []
         if self.title:
-            return self.title
-        if self.isbn:
-            parts.append(self.isbn)
+            parts.append(self.title)
         if self.publication_year is not None:
             parts.append(str(self.publication_year))
-        if self.edition_statement:
-            parts.append(self.edition_statement)
         return " | ".join(parts) if parts else str(self.id)
 
 
