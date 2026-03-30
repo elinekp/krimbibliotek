@@ -436,6 +436,30 @@ class SeriesMembership(models.Model):
         ]
         ordering = ["series__title", "part_number", "part_display"]
 
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        super().clean()
+
+        if (self.work_id is None and self.manifestation_id is None) or (
+            self.work_id is not None and self.manifestation_id is not None
+        ):
+            raise ValidationError(
+                "En serietilknytning må peke til enten verk eller manifestasjon, men ikke begge."
+            )
+
+        if self.part_number is not None and self.part_number <= 0:
+            raise ValidationError(
+                {
+                    "part_number": "Delnummer må være større enn 0."
+                }
+            )
+
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+    
     def __str__(self):
         target = self.work or self.manifestation
         if self.part_display:
@@ -477,7 +501,7 @@ class WorkCharacter(models.Model):
             ),
         ]
         ordering = ["work", "character"]
-
+    
     def __str__(self):
         return f"{self.work} - {self.character}"
 
