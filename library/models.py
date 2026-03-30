@@ -123,6 +123,30 @@ class ExpressionManifestation(models.Model):
             ),
         ]
 
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        super().clean()
+
+        if self.is_primary:
+            existing_primary = ExpressionManifestation.objects.filter(
+                manifestation=self.manifestation,
+                is_primary=True,
+            )
+
+            if self.pk:
+                existing_primary = existing_primary.exclude(pk=self.pk)
+
+            if existing_primary.exists():
+                raise ValidationError(
+                    {
+                        "is_primary": (
+                            "Denne manifestasjonen har allerede en primærkobling. "
+                            "En manifestasjon kan ha maks én primærkobling."
+                        )
+                    }
+                )
+
     def __str__(self):
         return f"{self.expression_id} -> {self.manifestation_id}"
 
