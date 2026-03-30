@@ -411,3 +411,47 @@ class WorkCharacter(models.Model):
 
     def __str__(self):
         return f"{self.work} - {self.character}"
+
+class Genre(models.Model):
+    code = models.CharField(primary_key=True, max_length=100)
+    label = models.CharField(max_length=255)
+    parent_genre = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="child_genres",
+    )
+
+    class Meta:
+        ordering = ["code"]
+
+    def __str__(self):
+        return f"{self.code} - {self.label}"
+
+
+class WorkGenre(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    work = models.ForeignKey(
+        "Work",
+        on_delete=models.RESTRICT,
+        related_name="work_genres",
+    )
+    genre = models.ForeignKey(
+        Genre,
+        on_delete=models.RESTRICT,
+        related_name="work_genres",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["work", "genre"],
+                name="unique_workgenre_work_genre",
+            ),
+        ]
+        ordering = ["work", "genre"]
+
+    def __str__(self):
+        return f"{self.work} - {self.genre}"

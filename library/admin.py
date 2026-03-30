@@ -15,6 +15,8 @@ from .models import (
     SeriesMembership,
     Character,
     WorkCharacter,
+    Genre,
+    WorkGenre,
 )
 
 
@@ -216,3 +218,17 @@ class WorkCharacterAdmin(admin.ModelAdmin):
     search_fields = ("work__title_preferred", "character__name")
     autocomplete_fields = ("work", "character")
     list_select_related = ("work", "character")
+
+@admin.register(Genre)
+class GenreAdmin(admin.ModelAdmin):
+    list_display = ("code", "label", "parent_genre")
+    search_fields = ("code", "label")
+    autocomplete_fields = ("parent_genre",)
+
+
+@admin.register(WorkGenre)
+class WorkGenreAdmin(admin.ModelAdmin):
+    list_display = ("work", "genre")
+    search_fields = ("work__title_preferred", "genre__code", "genre__label")
+    autocomplete_fields = ("work", "genre")
+    list_select_related = ("work", "genre")
