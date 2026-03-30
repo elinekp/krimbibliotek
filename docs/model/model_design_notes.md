@@ -164,6 +164,99 @@ Det samme mønsteret er derfor også brukt i tabeller som:
 
 Prosjektet prioriterer her intern konsistens over minimalisme.
 
+---
+
+## X. Hvorfor Manifestation har eget title-felt
+
+Det er ikke alltid tilstrekkelig å identifisere en `Manifestation` bare gjennom ISBN, år og kobling til uttrykk.
+
+I praksis finnes det utgaver som har en egen manifestation-identitet som bør kunne uttrykkes eksplisitt i modellen.
+
+Dette gjelder særlig:
+- antologier
+- samleutgaver
+- manifestasjoner med flere `Expressions`
+- andre sammensatte utgivelser
+
+Et eget valgfritt `title`-felt på `Manifestation` gir derfor flere fordeler:
+- bedre bibliografisk presisjon
+- bedre lesbarhet i admin og grensesnitt
+- mindre risiko for at ulike utgaver framstår som utydelige eller identiske når de ikke er det
+
+Valget gjør modellen litt rikere, men uten å tvinge fram ekstra registrering i de vanlige enkelttilfellene.
+
+Feltet er derfor valgfritt, ikke obligatorisk.
+
+---
+
+## X. Hvorfor is_primary beholdes i ExpressionManifestation
+
+Selv om relasjonen mellom `Expression` og `Manifestation` er modellert som M2M, er det fortsatt nyttig å kunne markere en hovedkobling når en slik finnes.
+
+Dette er særlig praktisk fordi normalmønsteret i mange tilfeller fortsatt er:
+- én `Manifestation`
+- ett hoveduttrykk
+
+`is_primary` gjør det mulig å:
+- støtte enkle og vanlige utgaver uten å miste fleksibiliteten i modellen
+- håndtere mer sammensatte tilfeller uten å tvinge dem inn i et kunstig hovedmønster
+- gi tydeligere visning og enklere registrering i admin
+
+Fordelen er at modellen blir mer brukbar i praksis.
+
+Ulempen er at feltet krever en bevisst registreringspraksis.
+
+Derfor er løsningen:
+- vanlige utgaver skal normalt ha én primærkobling
+- antologier og enkelte samleutgaver kan ha ingen
+- flere primærkoblinger for samme `Manifestation` skal ikke forekomme
+
+---
+
+## X. Hvorfor WorkRelationship leses fra target til source
+
+Retningsbestemte verkrelasjoner blir fort uklare dersom modellen ikke også har en fast lesemåte.
+
+I denne modellen er derfor valget:
+
+- `source_work` = opphavlig eller primært verk
+- `target_work` = avledet eller sekundært verk
+
+Relasjonen leses som:
+
+- `target_work` (`relation_type`) `source_work`
+
+Eksempel:
+- tegneserieversjonen `adaptation_of` romanverket
+
+Fordelen med denne løsningen er at:
+- relasjonstypene kan formuleres som semantisk presise koder
+- lesingen blir stabil på tvers av registrering, visning og senere søk
+- det blir lettere å unngå at like tilfeller registreres i motsatt retning
+
+Ulempen er at det ikke nødvendigvis samsvarer med hvordan alle intuitivt forventer at feltnavnene skal leses ved første øyekast.
+
+Derfor må leseretningen være eksplisitt dokumentert og støttes i admin.
+
+---
+
+## X. Hvorfor kontrollerte verdier lagres som lokale koder i fase 1
+
+I fase 1 er målet å få en presis og operativ kjernemodell på plass uten å gjøre den daglige registreringen unødvendig tung.
+
+Derfor lagres kontrollerte verdier som stabile lokale koder, ikke som direkte URI-er i operative kjernetabeller.
+
+Dette gir flere fordeler:
+- enklere registrering og validering
+- mindre teknisk støy i databasens kjernefelt
+- tydelig kontroll over hvilke verdier som faktisk er gyldige i fase 1
+- senere mulighet for eksplisitt mapping til RDA eller andre eksterne vokabularer
+
+Fordelen er operativ enkelhet og tydeligere fase-1-grenser.
+
+Ulempen er at linked-data-koblingen ikke er fullt realisert direkte i hvert felt fra start.
+
+Dette er en bevisst utsettelse, ikke et brudd med linked-data-retningen.
 
 ---
 
