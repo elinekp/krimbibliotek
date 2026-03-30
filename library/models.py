@@ -3,6 +3,7 @@ import uuid
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Q
+from django.core.validators import RegexValidator
 
 
 class Work(models.Model):
@@ -137,7 +138,17 @@ class Agent(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     agent_type = models.CharField(max_length=32, choices=AGENT_TYPE_CHOICES)
-    wikidata_id = models.CharField(max_length=32, blank=True, null=True)
+    wikidata_id = models.CharField(
+        max_length=32,
+        blank=True,
+        null=True,
+        validators=[
+            RegexValidator(
+                regex=r"^Q\d+$",
+                message="wikidata_id må være på formen Q12345.",
+            )
+        ],
+    )
 
     class Meta:
         ordering = ["name"]
