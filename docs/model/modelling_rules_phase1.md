@@ -227,15 +227,16 @@ Dette kan være relevant for eksempel ved:
 - samleutgaver med flere separate uttrykk
 
 
-### 4.4 is_primary brukes for primærkobling når dette gir mening
+### 4.4 is_primary brukes som praktisk hovedkobling
 
-Feltet `is_primary` brukes for å markere primærkobling når en slik primærkobling faktisk gir mening.
+`is_primary` beholdes i fase 1 som praktisk markering av hovedkobling mellom `Manifestation` og `Expression`.
 
-Praktisk regel:
+Regler:
 - vanlige utgaver skal normalt ha én primærkobling
-- antologier og enkelte samleutgaver kan ha ingen primærkobling
+- manifestasjoner med flere expressions kan ha én primærkobling dersom en hovedkobling gir mening
+- antologier og samleutgaver kan ha ingen primærkobling
 
-Det skal aldri legges inn flere primærkoblinger for samme `Manifestation`.
+`is_primary` brukes altså ikke bare for spesialtilfeller, men som en praktisk hovedregel der en tydelig hovedkobling finnes.
 
 
 ### 4.5 Det som utsettes i ExpressionManifestation skal ikke improviseres inn
@@ -290,6 +291,20 @@ I fase 1 modelleres dette via `Contribution` / `Agent`, ikke som eget fritekstfe
 Når en serie er en forlagsserie, registreres serietilknytningen på `Manifestation`-nivå, ikke på `Work`.
 
 Dette skjer via `SeriesMembership`.
+
+### 5.6 Manifestation kan ha egen tittel i fase 1
+
+`Manifestation.title` brukes når utgaven har en egen tittel eller tydelig manifestation-identitet.
+
+Dette er særlig viktig for:
+- antologier
+- samleutgaver
+- manifestasjoner med flere expressions
+- andre sammensatte utgivelser
+
+Regel:
+- ikke tving fram egen manifestation-tittel når utgaven ikke faktisk har en slik identitet
+- bruk feltet når det gir bedre bibliografisk presisjon og bedre brukbarhet i grensesnitt og admin
 
 
 ---
@@ -675,24 +690,58 @@ Det brukes ikke for relasjoner mellom:
 - `Item`
 
 
-### 13.2 Relasjonen er retningsbestemt
+### 13.2 Fast leseretning for WorkRelationship
 
-Ved registrering må det tas stilling til:
-- hva som er `source_work`
-- hva som er `target_work`
-- hvilken `relation_type` som uttrykker forholdet best
+Ved registrering i fase 1 forstås:
 
-Praksisen må være konsekvent slik at lignende tilfeller registreres på samme måte.
+- `source_work` som det primære eller opphavlige verket
+- `target_work` som det sekundære eller avledede verket
+
+Relasjonen skal alltid leses slik:
+
+- `target_work` (`relation_type`) `source_work`
+
+Eksempel:
+- romanverket = `source_work`
+- tegneserieversjonen = `target_work`
+- `relation_type = adaptation_of`
+
+Leses som:
+- tegneserieversjonen `adaptation_of` romanverket
 
 
-### 13.3 relation_type skal være kontrollert
+### 13.3 relation_type skal være kontrollert og formulert i riktig retning
 
 `relation_type` skal være en stabil lokal kode.
 
-Den skal brukes konsekvent og ikke erstattes av fritekstformuleringer i selve relasjonsfeltet.
+Regler:
+- koden skal brukes konsekvent
+- koden skal ikke erstattes av fritekst i selve relasjonsfeltet
+- koden skal formuleres i samme leseretning som relasjonen registreres
+
+Bruk derfor koder som:
+- `adaptation_of`
+- `translation_of`
+- `abridgement_of`
+- `graphic_novelization_of`
+
+Unngå koder som snur leseretningen, som:
+- `adapted_as`
+- `translated_into`
+- `has_adaptation`
+
+### 13.4 Lokale koder først, mapping senere
+
+`relation_type` lagres i fase 1 som stabil lokal kode.
+
+Regel:
+- fase 1 skal ikke gjøre direkte URI-lagring til operativ hovedmekanisme i relasjonsfeltet
+- eventuell mapping til RDA Registry eller annet eksternt vokabular kommer senere
+
+Dette følger samme hovedprinsipp som for andre kontrollerte semantiske kategorier i fase 1.
 
 
-### 13.4 Grensetilfeller må håndteres eksplisitt
+### 13.5 Grensetilfeller må håndteres eksplisitt
 
 Ved tvil om en relasjon bør uttrykkes som:
 - adaptasjon
