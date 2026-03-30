@@ -299,3 +299,78 @@ class WorkRelationship(models.Model):
 
     def __str__(self):
         return f"{self.source_work} - {self.relation_type} -> {self.target_work}"
+
+class Series(models.Model):
+    NARRATIVE = "narrative"
+    PUBLISHER_SERIES = "publisher_series"
+
+    SERIES_TYPE_CHOICES = [
+        (NARRATIVE, "Narrative"),
+        (PUBLISHER_SERIES, "Publisher series"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=255)
+    series_type = models.CharField(max_length=32, choices=SERIES_TYPE_CHOICES)
+
+    class Meta:
+        ordering = ["title"]
+
+    def __str__(self):
+        return f"{self.title} [{self.series_type}]"
+
+
+class SeriesMembership(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    series = models.ForeignKey(
+        Series,
+        on_delete=models.RESTRICT,
+        related_name="memberships",
+    )
+    work = models.ForeignKey(
+        "Work",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="series_memberships",
+    )
+    manifestation = models.ForeignKey(
+        "Manifestation",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="series_memberships",
+    )
+    part_number = models.IntegerField(null=True, blank=True)
+    part_display = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                name="seriesmembership_exactly_one_target",
+                condition=(
+                    (Q(work__isnull=False) & Q(manifestation__isnull=True))
+                    | (Q(work__isnull=True) & Q(manifestation__isnull=False))
+                ),
+            ),
+            models.UniqueConstraint(
+                fields=["series", "work"],
+                condition=Q(work__isnull=False),
+                name="unique_seriesmembership_series_work",
+            ),
+            models.UniqueConstraint(
+                fields=["series", "manifestation"],
+                condition=Q(manifestation__isnull=False),
+                name="unique_seriesmembership_series_manifestation",
+            ),
+        ]
+        ordering = ["series__title", "part_number", "part_display"]
+
+    def __str__(self):
+        target = self.work or self.manifestation
+        if self.part_display:
+            return f"{self.series} - {target} ({self.part_display})"
+        if self.part_number is not None:
+            return f"{self.series} - {target} ({self.part_number})"
+        return f"{self.series} - {target}"
