@@ -13,6 +13,8 @@ from .models import (
     WorkRelationship,
     Series,
     SeriesMembership,
+    Character,
+    WorkCharacter,
 )
 
 
@@ -201,3 +203,16 @@ class SeriesMembershipAdmin(admin.ModelAdmin):
             },
         ),
     )
+
+@admin.register(Character)
+class CharacterAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+    search_fields = ("name",)
+
+
+@admin.register(WorkCharacter)
+class WorkCharacterAdmin(admin.ModelAdmin):
+    list_display = ("work", "character")
+    search_fields = ("work__title_preferred", "character__name")
+    autocomplete_fields = ("work", "character")
+    list_select_related = ("work", "character")

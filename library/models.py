@@ -374,3 +374,40 @@ class SeriesMembership(models.Model):
         if self.part_number is not None:
             return f"{self.series} - {target} ({self.part_number})"
         return f"{self.series} - {target}"
+
+class Character(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class WorkCharacter(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    work = models.ForeignKey(
+        "Work",
+        on_delete=models.RESTRICT,
+        related_name="work_characters",
+    )
+    character = models.ForeignKey(
+        Character,
+        on_delete=models.RESTRICT,
+        related_name="work_characters",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["work", "character"],
+                name="unique_workcharacter_work_character",
+            ),
+        ]
+        ordering = ["work", "character"]
+
+    def __str__(self):
+        return f"{self.work} - {self.character}"
