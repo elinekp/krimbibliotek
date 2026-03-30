@@ -9,6 +9,7 @@ from .models import (
     Agent,
     Role,
     Contribution,
+    WorkRelationship,
 )
 
 
@@ -20,3 +21,4 @@ admin.site.register(ExpressionManifestation)
 admin.site.register(Agent)
 admin.site.register(Role)
 admin.site.register(Contribution)
+admin.site.register(WorkRelationship)
