@@ -17,6 +17,8 @@ from .models import (
     WorkCharacter,
     Genre,
     WorkGenre,
+    AppealFactor,
+    WorkAppealFactor,
 )
 
 
@@ -232,3 +234,17 @@ class WorkGenreAdmin(admin.ModelAdmin):
     search_fields = ("work__title_preferred", "genre__code", "genre__label")
     autocomplete_fields = ("work", "genre")
     list_select_related = ("work", "genre")
+
+@admin.register(AppealFactor)
+class AppealFactorAdmin(admin.ModelAdmin):
+    list_display = ("code", "label", "parent_appeal_factor")
+    search_fields = ("code", "label", "definition", "scope_note")
+    autocomplete_fields = ("parent_appeal_factor",)
+
+
+@admin.register(WorkAppealFactor)
+class WorkAppealFactorAdmin(admin.ModelAdmin):
+    list_display = ("work", "appeal_factor")
+    search_fields = ("work__title_preferred", "appeal_factor__code", "appeal_factor__label")
+    autocomplete_fields = ("work", "appeal_factor")
+    list_select_related = ("work", "appeal_factor")

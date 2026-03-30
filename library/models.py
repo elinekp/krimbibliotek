@@ -455,3 +455,49 @@ class WorkGenre(models.Model):
 
     def __str__(self):
         return f"{self.work} - {self.genre}"
+
+class AppealFactor(models.Model):
+    code = models.CharField(primary_key=True, max_length=100)
+    label = models.CharField(max_length=255)
+    parent_appeal_factor = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="child_appeal_factors",
+    )
+    definition = models.TextField(blank=True, null=True)
+    scope_note = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["code"]
+
+    def __str__(self):
+        return f"{self.code} - {self.label}"
+
+
+class WorkAppealFactor(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    work = models.ForeignKey(
+        "Work",
+        on_delete=models.RESTRICT,
+        related_name="work_appeal_factors",
+    )
+    appeal_factor = models.ForeignKey(
+        AppealFactor,
+        on_delete=models.RESTRICT,
+        related_name="work_appeal_factors",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["work", "appeal_factor"],
+                name="unique_workappealfactor_work_appealfactor",
+            ),
+        ]
+        ordering = ["work", "appeal_factor"]
+
+    def __str__(self):
+        return f"{self.work} - {self.appeal_factor}"
