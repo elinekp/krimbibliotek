@@ -21,7 +21,7 @@ class Work(models.Model):
         ]
 
     def __str__(self):
-        return self.title_preferred
+        return f"{self.title_preferred} [{str(self.id)[:8]}]"
 
 
 class Expression(models.Model):
