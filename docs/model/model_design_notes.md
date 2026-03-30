@@ -534,18 +534,35 @@ Samtidig krever dette strengere praksis, fordi retning og relasjonstype må bruk
 
 ---
 
-## 27. Hvorfor Agent er samlet for personer og organisasjoner
+## 27. Hvorfor Agent er samlet for personer og kollektive agenter
 
-Prosjektet har valgt én samlet `Agent`-entitet for både personer og organisasjoner.
+Prosjektet har valgt én samlet `Agent`-entitet i fase 1.
 
-Fordeler:
-- enklere generell relasjonsmodell
+Dette er en bevisst operativ komprimering av LRM-strukturen, der `Agent` er superklasse for:
+- `Person`
+- `Collective Agent`
+
+I databasen modelleres dette foreløpig som:
+- én `Agent`-tabell
+- ett kontrollert felt `agent_type`
+
+I fase 1 brukes:
+- `person`
+- `collective_agent`
+
+Hvorfor dette er valgt:
+- det gir en enklere og mer konsekvent relasjonsmodell
 - samme bidragsstruktur kan brukes på tvers av aktørtyper
-- mindre behov for parallelle tabeller og koblingslogikk
+- det reduserer behovet for parallelle tabeller og særlogikk i en tidlig prosjektfase
 
-Ulempen er at enkelte framtidige behov kan bli mer komplekse, for eksempel hvis personer og organisasjoner senere får svært ulike attributter.
+Hvorfor dette ikke er formulert som `person` + `organization`:
+- LRM bruker `collective agent`, ikke `organization`, som overordnet kategori
+- `collective_agent` er bredere og mer semantisk presist
+- kategorien kan omfatte blant annet organisasjoner, familier, konferanser, grupper, regjeringer og andre navngitte kollektive enheter
 
-I fase 1 vurderes fordelene som klart større enn ulempene.
+Konsekvensen er at modellen i fase 1 er enklere enn full LRM-subklassestruktur, men ikke semantisk frakoblet LRM/RDA.
+
+Dette gjør det også lettere å splitte ut egne tabeller senere dersom prosjektet på et senere tidspunkt trenger tydelig ulike attributtsett for personer og kollektive agenter.
 
 
 ---
@@ -601,7 +618,66 @@ Dette er derfor et eksempel på selektiv tidlig støtte heller enn full identifi
 
 ---
 
-## 31. Hvorfor VIAF er utsatt
+## 31. Hvorfor `Nomen`, `Place` og `Time-span` ikke modelleres som egne entiteter i fase 1
+
+IFLA LRM modellerer `Nomen`, `Place` og `Time-span` som egne entiteter.
+
+Prosjektet velger likevel å ikke innføre full struktur for disse i fase 1.
+
+Dette er et pragmatisk avgrensningsvalg, ikke en faglig avvisning av LRM.
+
+Hvorfor de utsettes:
+- fase 1 trenger en byggbar og håndterbar kjerne
+- full støtte for appellasjoner, steder og tidsutstrekninger ville utvide modell- og registreringsarbeidet betydelig
+- flere av de konkrete bruksområdene for disse entitetene er relevante, men ikke nødvendige for første operative versjon
+
+Dette gjelder særlig:
+- variantnavn, pseudonymer og alternative titler (`Nomen`)
+- strukturert stedsmodellering (`Place`)
+- generisk modellering av tidsutstrekninger (`Time-span`)
+
+Prosjektet ønsker likevel å holde disse utvidelsene åpne.
+
+Derfor skal fase-1-felt som midlertidig representerer slike opplysninger:
+- være atomiske
+- være semantisk avgrensede
+- ikke blande flere typer informasjon i samme verdi
+- navngis og brukes slik at senere migrering til egne entiteter kan skje uten semantisk brudd
+
+Dette betyr at fase 1 kan bruke enklere operative tekst- eller årsfelt, men ikke på en måte som låser modellen bort fra senere LRM-nær utvidelse.
+
+---
+
+## 32. Hvorfor fase-1-navn og titler må forstås som foretrukne visningsformer
+
+Når prosjektet i fase 1 bruker felt som `name` eller foretrukket tittel, skal disse forstås som operative visningsformer.
+
+De er ikke en full modellering av LRM-entiteten `Nomen`.
+
+Det betyr blant annet at fase 1 foreløpig ikke forsøker å modellere:
+- variantnavn
+- pseudonymer
+- alternative titler
+- autoriserte tilgangspunkter
+- komplette appellasjonsnettverk mellom entitet og navneformer
+
+Denne avgrensningen er valgt for å holde fase 1 enkel.
+
+Samtidig er det viktig at slike felt ikke behandles som om de var full identitetsstruktur.
+
+Dette har flere konsekvenser:
+- tekstlikhet alene må ikke brukes som endelig identitetslogikk
+- ett fase-1-navn betyr ikke at entiteten bare har én gyldig appellasjon
+- senere nomen-støtte må kunne legges til uten at eksisterende felt må omfortolkes
+
+Denne tankegangen gjelder særlig for:
+- `Agent.name`
+- `Character.name`
+- foretrukne tittel- eller navnefelt på andre entiteter
+
+---
+
+## 33. Hvorfor VIAF er utsatt
 
 At `viaf_id` ikke er med som eget fase-1-felt, betyr ikke at VIAF er uviktig.
 
@@ -614,7 +690,7 @@ Samtidig holdes muligheten åpen for at VIAF eller andre identifikatorer kan kom
 
 ---
 
-## 32. Hvorfor kontrollerte koder prioriteres før direkte eksterne URI-er
+## 34. Hvorfor kontrollerte koder prioriteres før direkte eksterne URI-er
 
 Prosjektet har valgt å bruke stabile lokale koder i fase 1 for sentrale semantiske kategorier.
 
@@ -639,7 +715,7 @@ Prosjektet har vurdert denne mellomposisjonen som mest realistisk og mest robust
 
 ---
 
-## 33. Hvorfor workflow-felter er utsatt fra kjernemodellen
+## 35. Hvorfor workflow-felter er utsatt fra kjernemodellen
 
 Prosjektet ser et sannsynlig framtidig behov for arbeidsflyt knyttet til:
 - staging
@@ -662,7 +738,7 @@ Dette betyr ikke at slike behov er små. Tvert imot kan de bli viktige senere. M
 
 ---
 
-## 34. Lagdelt kildestrategi som designretning
+## 36. Lagdelt kildestrategi som designretning
 
 Prosjektet ser for seg en framtidig lagdelt kildestrategi.
 
@@ -684,7 +760,7 @@ Denne retningen er viktig for å forstå hvorfor modellen både er stram i kjern
 
 ---
 
-## 35. Staging som framtidig arbeidslag
+## 37. Staging som framtidig arbeidslag
 
 Staging er ikke en del av den normative fase-1-modellen, men framstår som en sannsynlig framtidig komponent.
 
@@ -701,7 +777,7 @@ At staging ikke er med nå, betyr derfor ikke at tanken er forlatt. Den er bare 
 
 ---
 
-## 36. Offentlig portal og administrativ flate som ulike behov
+## 38. Offentlig portal og administrativ flate som ulike behov
 
 Prosjektet peker mot et framtidig skille mellom minst to ulike brukerflater:
 - en offentlig portal for utforsking, søk og formidling
@@ -716,7 +792,7 @@ Modellen prøver å være et felles fundament for begge, uten at én av flatene 
 
 ---
 
-## 37. Det “levende biblioteket” som produktidé
+## 39. Det “levende biblioteket” som produktidé
 
 Tanken om et “levende bibliotek” er en viktig produktidé i prosjektet.
 
@@ -735,7 +811,7 @@ Det er likevel viktig å forstå at dette foreløpig er en designretning og prod
 
 ---
 
-## 38. Hvorfor fase 1 bevisst holder igjen enkelte ting
+## 40. Hvorfor fase 1 bevisst holder igjen enkelte ting
 
 Flere ting er bevisst utsatt i fase 1:
 - generell identifikatorstruktur
@@ -757,7 +833,7 @@ fase 1 er ikke “minimum mulig modell”, men en selektivt beskyttet kjerne.
 
 ---
 
-## 39. Hva slags type prosjekt dette egentlig er
+## 41. Hva slags type prosjekt dette egentlig er
 
 Krimbiblioteket er ikke bare et katalogprosjekt og ikke bare et formidlingsprosjekt.
 
@@ -772,7 +848,7 @@ Denne prosjektkarakteren er viktig å ha med seg når man vurderer modellvalg. M
 
 ---
 
-## 40. Hvordan dette dokumentet bør brukes videre
+## 42. Hvordan dette dokumentet bør brukes videre
 
 Dette dokumentet bør brukes når prosjektet trenger å:
 - forklare hvorfor et valg ble tatt
