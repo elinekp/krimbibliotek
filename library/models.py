@@ -53,6 +53,7 @@ class Expression(models.Model):
 
 class Manifestation(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=255, blank=True, null=True)
     isbn = models.CharField(max_length=32, null=True, blank=True)
     publication_year = models.IntegerField(
         null=True,
@@ -64,9 +65,12 @@ class Manifestation(models.Model):
 
     class Meta:
         db_table = "manifestation"
+        ordering = ["title", "publication_year", "isbn"]
 
     def __str__(self):
         parts = []
+        if self.title:
+            return self.title
         if self.isbn:
             parts.append(self.isbn)
         if self.publication_year is not None:
