@@ -293,6 +293,30 @@ class Contribution(models.Model):
         ]
         ordering = ["role__code", "agent__name"]
 
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        super().clean()
+
+        targets = [
+            self.work_id,
+            self.expression_id,
+            self.manifestation_id,
+            self.item_id,
+        ]
+
+        selected_target_count = sum(1 for value in targets if value is not None)
+
+        if selected_target_count != 1:
+            raise ValidationError(
+                "En contribution må peke til nøyaktig én målentitet: work, expression, manifestation eller item."
+            )
+
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+    
     def __str__(self):
         target = self.work or self.expression or self.manifestation or self.item
         return f"{self.agent} - {self.role} - {target}"
