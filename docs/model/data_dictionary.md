@@ -113,6 +113,7 @@ WEMI: Manifestation
 | Felt | Type | Obligatorisk | Beskrivelse |
 |---|---|---:|---|
 | `id` | UUID | ja | Primærnøkkel for manifestation |
+| `title` | string | nei | Tittel på manifestasjonen når utgaven har egen tittel eller tydelig manifestation-identitet |
 | `isbn` | string | nei | ISBN for utgaven når kjent |
 | `publication_year` | integer | nei | Utgivelsesår |
 | `edition_statement` | string | nei | Utgaveangivelse slik den vises eller registreres |
@@ -122,7 +123,8 @@ WEMI: Manifestation
 - PK: `id`
 
 ### Merknad
-Kobling til `Expression` skjer via `ExpressionManifestation`, ikke via direkte felt på `Manifestation`.
+- Kobling til `Expression` skjer via `ExpressionManifestation`, ikke via direkte felt på `Manifestation`.
+- `title` brukes når manifestasjonen har en egen tittel eller tydelig manifestation-identitet, for eksempel ved antologier, samleutgaver eller manifestasjoner med flere expressions.
 
 
 ---
@@ -178,7 +180,9 @@ Kobling mellom WEMI-nivåene Expression og Manifestation
 - Unik kombinasjon: (`expression`, `manifestation`)
 
 ### Merknad
-En `Manifestation` kan ha maks én primærkobling.
+- En `Manifestation` kan ha maks én primærkobling.
+- Vanlige utgaver skal normalt ha én primærkobling.
+- Antologier og samleutgaver kan ha ingen primærkobling.
 
 
 ---
@@ -300,9 +304,9 @@ Work-nivå
 | Felt | Type | Obligatorisk | Beskrivelse |
 |---|---|---:|---|
 | `id` | UUID | ja | Primærnøkkel for relasjonen |
-| `source_work` | UUID / FK | ja | Utgående verk i relasjonen |
-| `target_work` | UUID / FK | ja | Inngående verk i relasjonen |
-| `relation_type` | string / kontrollert kode | ja | Type verkrelasjon |
+| `source_work` | UUID / FK | ja | Opphavlig eller primært verk i relasjonen |
+| `target_work` | UUID / FK | ja | Avledet eller sekundært verk i relasjonen |
+| `relation_type` | string / kontrollert kode | ja | Relasjonstype uttrykt som stabil lokal kode |
 
 ### Nøkler og referanser
 - PK: `id`
@@ -310,7 +314,9 @@ Work-nivå
 - FK: `target_work` → `Work.id`
 
 ### Merknad
-Selvrelasjon er ikke tillatt.
+- Selvrelasjon er ikke tillatt.
+- Relasjonen leses som: `target_work (relation_type) source_work`.
+- Eksempel: tegneserieversjonen `adaptation_of` romanverket.
 
 
 ---
