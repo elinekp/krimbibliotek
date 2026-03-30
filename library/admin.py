@@ -11,6 +11,8 @@ from .models import (
     Role,
     Contribution,
     WorkRelationship,
+    Series,
+    SeriesMembership,
 )
 
 
@@ -99,7 +101,6 @@ class WorkRelationshipAdminForm(forms.ModelForm):
 @admin.register(WorkRelationship)
 class WorkRelationshipAdmin(admin.ModelAdmin):
     form = WorkRelationshipAdminForm
-
     list_display = (
         "target_work",
         "relation_type",
@@ -131,3 +132,54 @@ class WorkRelationshipAdmin(admin.ModelAdmin):
     @admin.display(description="Les som")
     def relationship_reading(self, obj):
         return f"{obj.target_work} {obj.relation_type} {obj.source_work}"
+
+
+@admin.register(Series)
+class SeriesAdmin(admin.ModelAdmin):
+    list_display = ("title", "series_type")
+    list_filter = ("series_type",)
+    search_fields = ("title",)
+
+
+class SeriesMembershipAdminForm(forms.ModelForm):
+    class Meta:
+        model = SeriesMembership
+        fields = "__all__"
+        labels = {
+            "series": "Serie",
+            "work": "Verk",
+            "manifestation": "Manifestasjon",
+            "part_number": "Delnummer",
+            "part_display": "Visning av del",
+        }
+        help_texts = {
+            "work": "Brukes for narrative serier på verksnivå.",
+            "manifestation": "Brukes for serier på manifestasjonsnivå, for eksempel forlagsserie.",
+            "part_number": "Valgfritt numerisk serienummer.",
+            "part_display": "Valgfri visningstekst, for eksempel 'Del 1' eller 'Bind II'.",
+        }
+
+
+@admin.register(SeriesMembership)
+class SeriesMembershipAdmin(admin.ModelAdmin):
+    form = SeriesMembershipAdminForm
+    list_display = ("series", "work", "manifestation", "part_number", "part_display")
+    search_fields = (
+        "series__title",
+        "work__title_preferred",
+        "manifestation__isbn",
+        "part_display",
+    )
+    autocomplete_fields = ("series", "work", "manifestation")
+    list_select_related = ("series", "work", "manifestation")
+    fieldsets = (
+        (
+            "Serietilknytning",
+            {
+                "fields": ("series", "work", "manifestation", "part_number", "part_display"),
+                "description": (
+                    "Fyll ut enten Verk eller Manifestasjon, men ikke begge."
+                ),
+            },
+        ),
+    )
