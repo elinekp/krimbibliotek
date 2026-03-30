@@ -2,7 +2,7 @@ import uuid
 
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, F
 from django.core.validators import RegexValidator
 
 
@@ -268,3 +268,34 @@ class Contribution(models.Model):
     def __str__(self):
         target = self.work or self.expression or self.manifestation or self.item
         return f"{self.agent} - {self.role} - {target}"
+
+class WorkRelationship(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    source_work = models.ForeignKey(
+        "Work",
+        on_delete=models.RESTRICT,
+        related_name="outgoing_work_relationships",
+    )
+    target_work = models.ForeignKey(
+        "Work",
+        on_delete=models.RESTRICT,
+        related_name="incoming_work_relationships",
+    )
+    relation_type = models.CharField(max_length=100)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                name="workrelationship_no_self_relation",
+                condition=~Q(source_work=F("target_work")),
+            ),
+            models.UniqueConstraint(
+                fields=["source_work", "target_work", "relation_type"],
+                name="unique_workrelationship_source_target_type",
+            ),
+        ]
+        ordering = ["relation_type", "source_work", "target_work"]
+
+    def __str__(self):
+        return f"{self.source_work} - {self.relation_type} -> {self.target_work}"
