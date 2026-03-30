@@ -190,24 +190,52 @@ Eksempel:
 
 ---
 
-## 10. Agent er egen entitet for personer og organisasjoner
+## 10. Agent er egen entitet, komprimert i fase 1 men semantisk tro mot LRM
 
 `Agent` er en egen entitet i modellen.
 
+I fase 1 komprimeres LRM-underklassene `Person` og `Collective Agent` til én operativ `Agent`-tabell med kontrollert typefelt.
+
 Regler:
-- `Agent` brukes for både personer og organisasjoner
+- `Agent` brukes for både personer og kollektive agenter
 - `Agent` skal ha `id`, `name` og `agent_type`
 - `agent_type` er obligatorisk og kontrollert
+- gyldige fase-1-verdier for `agent_type` er:
+  - `person`
+  - `collective_agent`
 - `wikidata_id` er tillatt som fase-1-identifikator
 - roller skal ikke ligge direkte på `Agent`
 
 Konsekvens:
 - rolle uttrykkes i relasjon, ikke som attributt på agenten
-
+- fase-1-modellen er operativt komprimert, men semantisk tilpasset LRM/RDA
+- modellen skal ikke låses til en snevrere kategori som bare `organization`, siden `collective_agent` i LRM er bredere enn dette
 
 ---
 
-## 11. Role er egen kontrollert entitet
+## 11. Fase-1-attributter skal kunne migreres til senere LRM-entiteter uten semantisk brudd
+
+Når et fase-1-attributt representerer informasjon som i LRM/RDA mer presist hører hjemme i egen entitet eller relasjon, skal attributtet behandles som en midlertidig operativ representasjon.
+
+Dette gjelder særlig framtidig støtte for:
+- `Nomen`
+- `Place`
+- `Time-span`
+
+Regler:
+- slike fase-1-felt skal være atomiske
+- slike fase-1-felt skal ha klar og avgrenset semantikk
+- slike fase-1-felt skal ikke blande flere opplysningstyper i samme verdi
+- slike fase-1-felt skal ikke brukes som erstatning for senere identitets- eller autoritetsstruktur
+- navngivning og bruk skal gjøre senere migrering til egen entitet mulig uten semantisk brudd
+
+Konsekvens:
+- fase 1 kan bruke enklere operative felt
+- modellen skal likevel ikke designes på en måte som gjør senere innføring av `Nomen`, `Place` eller `Time-span` vanskelig eller tvetydig
+
+---
+
+## 12. Role er egen kontrollert entitet
 
 `Role` er egen entitet for kontrollerte agentroller.
 
@@ -222,7 +250,7 @@ Regler:
 
 ---
 
-## 12. Contribution modellerer agentroller eksplisitt
+## 13. Contribution modellerer agentroller eksplisitt
 
 `Contribution` er koblingstabellen for agentroller i modellen.
 
@@ -240,7 +268,7 @@ I fase 1 kan `Contribution` kobles til nøyaktig én av:
 
 ---
 
-## 13. Contribution har XOR-regel for målentitet
+## 14. Contribution har XOR-regel for målentitet
 
 For hver rad i `Contribution` gjelder:
 
@@ -253,7 +281,7 @@ Dette er en hard XOR-regel og skal håndheves teknisk
 
 ---
 
-## 14. Contribution skal være unik per målentitet + agent + rolle
+## 15. Contribution skal være unik per målentitet + agent + rolle
 
 Samme agent skal ikke kunne registreres flere ganger med samme rolle mot samme målentitet.
 
@@ -265,7 +293,7 @@ Dette gjelder uansett hvilket nivå målentiteten ligger på
 
 ---
 
-## 15. Contribution på Item brukes for strukturert proveniens, ikke sirkulasjon
+## 16. Contribution på Item brukes for strukturert proveniens, ikke sirkulasjon
 
 Når `Contribution` brukes på `Item` i fase 1, gjelder dette copy-specific relasjoner som:
 - tidligere eier
@@ -278,7 +306,7 @@ Regel:
 
 ---
 
-## 16. Series er egen entitet med kontrollert series_type
+## 17. Series er egen entitet med kontrollert series_type
 
 `Series` er egen entitet i modellen.
 
@@ -296,7 +324,7 @@ Andre serietyper er ikke del av fase-1-modellen
 
 ---
 
-## 17. SeriesMembership er eksplisitt koblingstabell mellom Series og enten Work eller Manifestation
+## 18. SeriesMembership er eksplisitt koblingstabell mellom Series og enten Work eller Manifestation
 
 `SeriesMembership` er egen koblingstabell.
 
@@ -311,7 +339,7 @@ Dette innebærer:
 
 ---
 
-## 18. SeriesMembership har XOR-regel mellom Work og Manifestation
+## 19. SeriesMembership har XOR-regel mellom Work og Manifestation
 
 For hver rad i `SeriesMembership` gjelder:
 
@@ -324,7 +352,7 @@ Dette er en hard XOR-regel og skal håndheves teknisk
 
 ---
 
-## 19. SeriesMembership skal være unikt per serie og målentitet
+## 20. SeriesMembership skal være unikt per serie og målentitet
 
 Duplikatkoblinger er ikke tillatt.
 
@@ -335,7 +363,7 @@ Unike regler:
 
 ---
 
-## 20. Character er egen Work-nivåentitet
+## 21. Character er egen Work-nivåentitet
 
 `Character` er egen entitet i modellen.
 
@@ -352,7 +380,7 @@ I fase 1 har `Character`:
 
 ---
 
-## 21. WorkCharacter er eksplisitt koblingstabell mellom Work og Character
+## 22. WorkCharacter er eksplisitt koblingstabell mellom Work og Character
 
 `WorkCharacter` er en eksplisitt koblingstabell.
 
@@ -367,7 +395,7 @@ Unik regel:
 
 ---
 
-## 22. WorkRelationship modellerer bare Work-til-Work-relasjoner
+## 23. WorkRelationship modellerer bare Work-til-Work-relasjoner
 
 `WorkRelationship` er egen entitet for intellektuelle relasjoner mellom verk.
 
@@ -383,7 +411,7 @@ Unik regel:
 
 ---
 
-## 23. Genre er kontrollert Work-taksonomi
+## 24. Genre er kontrollert Work-taksonomi
 
 `Genre` er egen entitet i modellen.
 
@@ -401,7 +429,7 @@ Regler:
 
 ---
 
-## 24. WorkGenre er eksplisitt koblingstabell mellom Work og Genre
+## 25. WorkGenre er eksplisitt koblingstabell mellom Work og Genre
 
 `WorkGenre` er egen koblingstabell.
 
@@ -416,7 +444,7 @@ Unik regel:
 
 ---
 
-## 25. AppealFactor er kontrollert Work-vokabular
+## 26. AppealFactor er kontrollert Work-vokabular
 
 `AppealFactor` er egen entitet i modellen.
 
@@ -436,7 +464,7 @@ Regler:
 
 ---
 
-## 26. WorkAppealFactor er eksplisitt koblingstabell mellom Work og AppealFactor
+## 27. WorkAppealFactor er eksplisitt koblingstabell mellom Work og AppealFactor
 
 `WorkAppealFactor` er egen koblingstabell.
 
@@ -451,7 +479,7 @@ Unik regel:
 
 ---
 
-## 27. Språk registreres på Expression
+## 28. Språk registreres på Expression
 
 Regel:
 - språk skal registreres på `Expression`-nivå
@@ -462,7 +490,7 @@ Dette følger av at språk i modellen er knyttet til verkets realisering
 
 ---
 
-## 28. Realiseringstype registreres på Expression
+## 29. Realiseringstype registreres på Expression
 
 Regel:
 - realiseringstype registreres på `Expression`
@@ -472,7 +500,7 @@ Regel:
 
 ---
 
-## 29. Flere Expressions med samme språk og samme realiseringstype er tillatt
+## 30. Flere Expressions med samme språk og samme realiseringstype er tillatt
 
 Regel:
 - modellen tillater flere `Expressions` innenfor samme `Work` med samme kombinasjon av `language_code` og `expression_type`
@@ -482,7 +510,7 @@ Det skal derfor ikke finnes en hard unik constraint som forbyr dette på `Expres
 
 ---
 
-## 30. Manifestation representerer bibliografisk identitet på utgavenivå
+## 31. Manifestation representerer bibliografisk identitet på utgavenivå
 
 Regel:
 - `Manifestation` representerer utgavenivået i modellen
@@ -497,7 +525,7 @@ Typiske forskjeller som kan representere ulike `Manifestations`:
 
 ---
 
-## 31. Item representerer eksemplarnivå, ikke utgavenivå
+## 32. Item representerer eksemplarnivå, ikke utgavenivå
 
 Regel:
 - `Item` representerer individuelle eksemplarer
@@ -507,7 +535,7 @@ Regel:
 
 ---
 
-## 32. Proveniens kan ligge på Item som fritekst eller strukturert relasjon
+## 33. Proveniens kan ligge på Item som fritekst eller strukturert relasjon
 
 Regel:
 - `Item` kan bruke `provenance_notes` for enkel proveniens
@@ -518,7 +546,7 @@ Dette endrer ikke regelen om at sirkulasjonslogikk ikke inngår i fase 1
 
 ---
 
-## 33. Relasjonspolicy i fase 1 er SET_NULL
+## 34. Relasjonspolicy i fase 1 er SET_NULL
 
 Der fase-1-modellen bruker nullable relasjoner som del av designet, er relasjonspolicy i fase 1:
 
@@ -530,7 +558,7 @@ Regel:
 
 ---
 
-## 34. Grensen mellom Work, Expression og Manifestation endres ikke av lokale enkelttilpasninger
+## 35. Grensen mellom Work, Expression og Manifestation endres ikke av lokale enkelttilpasninger
 
 Regel:
 - databasen skal ikke utvides ad hoc for å omgå skillet mellom `Work`, `Expression` og `Manifestation`
@@ -541,7 +569,7 @@ Dette beskytter modellens nivådeling over tid
 
 ---
 
-## 35. Endring av en invariant krever eksplisitt arkitekturbeslutning
+## 36. Endring av en invariant krever eksplisitt arkitekturbeslutning
 
 Hvis en foreslått modellendring:
 - endrer nivåplassering
