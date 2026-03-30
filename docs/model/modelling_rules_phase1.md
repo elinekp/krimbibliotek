@@ -59,6 +59,25 @@ Databasen avgjør ikke alene:
 
 Slike spørsmål må avgjøres gjennom katalogiseringsfaglig vurdering og konsekvent praksis.
 
+### 1.4 Midlertidige fase-1-felt skal være migrerbare
+
+Når fase 1 bruker et enkelt attributt der LRM/RDA senere kan kreve egen entitet eller relasjon, skal feltet behandles som en midlertidig operativ løsning.
+
+Dette gjelder særlig framtidig støtte for:
+- `Nomen`
+- `Place`
+- `Time-span`
+
+Praktiske regler:
+- feltet skal være atomisk
+- feltet skal ha klar og avgrenset betydning
+- feltet skal ikke blande flere opplysningstyper i samme verdi
+- feltet skal ikke brukes som om det allerede var full autoritets- eller identitetsstruktur
+
+Eksempel:
+- et navn i fase 1 registreres som foretrukket visningsnavn, ikke som full nomen-struktur
+- et sted i fase 1 bør registreres som tekstlig stedsopplysning, ikke som ferdig modellert stedentitet
+- en tidsopplysning i fase 1 bør registreres som konkret dato/år/periodeopplysning, ikke som en generell og uklar "time span"-verdi
 
 ---
 
@@ -497,11 +516,11 @@ Det innføres ikke i fase 1:
 
 ## 11. Agent, Role og Contribution
 
-### 11.1 Agent brukes for både personer og organisasjoner
+### 11.1 Agent brukes for både personer og kollektive agenter
 
 `Agent` brukes for både:
 - personer
-- organisasjoner
+- kollektive agenter
 
 I fase 1 har `Agent`:
 - `id`
@@ -509,21 +528,23 @@ I fase 1 har `Agent`:
 - `agent_type`
 - `wikidata_id`
 
-`name` forstås som foretrukket navn, ikke som unik identifikator.
+`name` forstås som foretrukket navn, ikke som unik identifikator og ikke som full nomen-struktur.
 
 
-### 11.2 Agent type skal brukes konsekvent
+### 11.2 Agent type skal være LRM-tro og brukes konsekvent
 
 `agent_type` er obligatorisk og skal bruke kontrollert verdi.
 
-I fase 1 brukes minst:
+I fase 1 brukes:
 - `person`
-- `organization`
+- `collective_agent`
 
 Verdiene skal ikke erstattes av fritekstvarianter.
 
+Mer spesifikke underinndelinger, som for eksempel organisasjon, familie eller konferanse, er ikke en del av fase-1-strukturen med mindre dette senere innføres eksplisitt.
 
-### 11.3 wikidata_id kan brukes, VIAF er utsatt
+
+### 11.3 wikidata_id kan brukes, VIAF og rikere identifikatorstruktur er utsatt
 
 `wikidata_id` kan registreres når den er kjent.
 
@@ -532,7 +553,19 @@ I fase 1 brukes ikke eget felt for `viaf_id`.
 Andre identifikatorer og mer generell identifikatorstruktur er utsatt.
 
 
-### 11.4 Role brukes som kontrollert rollevokabular
+### 11.4 Agent-navn registreres som foretrukket fase-1-form
+
+`Agent.name` brukes som foretrukket navn i fase 1.
+
+Dette betyr:
+- ett operativt navn per agentpost i fase 1
+- ingen egen struktur for variantnavn, pseudonymer eller autoriserte tilgangspunkter i fase 1
+- navnet skal ikke forstås som full erstatning for en senere `Nomen`-modell
+
+Hvis alternative navneformer blir viktige, må dette håndteres i senere struktur, ikke gjennom improviserte ekstra felt eller inkonsekvent praksis.
+
+
+### 11.5 Role brukes som kontrollert rollevokabular
 
 `Role` brukes som kontrollert vokabular for agentroller.
 
@@ -543,7 +576,7 @@ I fase 1 har `Role`:
 Rollen skal ligge i relasjonen, ikke på `Agent`.
 
 
-### 11.5 Contribution brukes for agent + rolle + målentitet
+### 11.6 Contribution brukes for agent + rolle + målentitet
 
 `Contribution` brukes når en `Agent` har en rolle knyttet til en entitet i modellen.
 
@@ -556,7 +589,7 @@ I fase 1 kan `Contribution` kobles til:
 Én rad skal alltid peke til nøyaktig én av disse.
 
 
-### 11.6 Typisk nivåbruk for Contribution
+### 11.7 Typisk nivåbruk for Contribution
 
 Som hovedpraksis i fase 1 brukes:
 - `Work` for verkrelaterte roller, for eksempel forfatter
@@ -565,7 +598,6 @@ Som hovedpraksis i fase 1 brukes:
 - `Item` for strukturert proveniens når dette gir tydelig merverdi
 
 Ved tvil skal rollen legges på det nivået den faktisk beskriver.
-
 
 ---
 
