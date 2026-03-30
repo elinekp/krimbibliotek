@@ -325,6 +325,23 @@ class WorkRelationship(models.Model):
         ]
         ordering = ["relation_type", "source_work", "target_work"]
 
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        super().clean()
+
+        if self.source_work_id and self.target_work_id:
+            if self.source_work_id == self.target_work_id:
+                raise ValidationError(
+                    {
+                        "target_work": "Et verk kan ikke ha relasjon til seg selv."
+                    }
+                )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+    
     def __str__(self):
         return f"{self.source_work} - {self.relation_type} -> {self.target_work}"
 
