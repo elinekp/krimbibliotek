@@ -1,111 +1,126 @@
+import uuid
+
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import Q
 
-class Agent(models.Model):
-    name = models.CharField(max_length=255)
-    uri = models.URLField(max_length=500, null=True, blank=True)
-    biography = models.TextField(null=True, blank=True)
-    
-    def __str__(self):
-        return self.name
-
-class Role(models.Model):
-    # Selve koden (f.eks. 'aut')
-    code = models.CharField(max_length=20) 
-    
-    # Menneskelig lesbar etikett (f.eks. 'Forfatter')
-    label = models.CharField(max_length=100)
-    
-    # Angir kilden (f.eks. 'LOC', 'RDA', 'Local')
-    vocabulary = models.CharField(max_length=50, default='LOC')
-    
-    # URI for Linked Data-kompatibilitet (f.eks. http://id.loc.gov/vocabulary/relators/aut)
-    uri = models.URLField(blank=True, null=True, unique=True)
-
-    class Meta:
-        # Sikrer at kombinasjonen av kode og vokabular er unik
-        unique_together = ('code', 'vocabulary')
-
-    def __str__(self):
-        return f"{self.label} [{self.vocabulary}]"
-
-class Genre(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField(null=True, blank=True)
-    parent = models.ForeignKey(
-        'self', 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
-        related_name='subgenres'
-    )
-
-    def __str__(self):
-        return f"{self.parent.name} > {self.name}" if self.parent else self.name
-
-class AppealFactor(models.Model):
-    CATEGORY_CHOICES = [
-        ('Pace', 'Pace'),
-        ('Tone', 'Tone'),
-        ('Writing Style', 'Writing Style'),
-        ('Characterization', 'Characterization'),
-        ('Storyline', 'Storyline'),
-        ('Frame', 'Frame'),
-    ]
-    name = models.CharField(max_length=100)
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
-    description = models.TextField(null=True, blank=True)
-    parent = models.ForeignKey(
-        'self', 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
-        related_name='subfactors'
-    )
-
-    def __str__(self):
-        hierarchy = f"{self.parent.name} > " if self.parent else ""
-        return f"{self.category}: {hierarchy}{self.name}"
 
 class Work(models.Model):
-    preferred_title = models.CharField(max_length=255)
-    original_language = models.CharField(max_length=100, null=True, blank=True)
-    uri = models.URLField(max_length=500, null=True, blank=True)
-    genres = models.ManyToManyField(Genre, blank=True)
-    appeal_factors = models.ManyToManyField(AppealFactor, blank=True)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title_preferred = models.TextField()
+    wikidata_id = models.CharField(max_length=100, null=True, blank=True)
+
+    class Meta:
+        db_table = "work"
+        constraints = [
+            models.CheckConstraint(
+                condition=~Q(title_preferred=""),
+                name="ck_work_title_preferred_not_blank",
+            ),
+        ]
 
     def __str__(self):
-        return self.preferred_title
+        return self.title_preferred
+
 
 class Expression(models.Model):
-    work = models.ForeignKey(Work, on_delete=models.SET_NULL, null=True, related_name='expressions')
-    title_on_expression = models.CharField(max_length=255)
-    language = models.CharField(max_length=100)
-    content_type = models.CharField(max_length=100, default="text")
-    
-    def __str__(self):
-        return f"{self.title_on_expression} ({self.language})"
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    work = models.ForeignKey(
+        Work,
+        on_delete=models.RESTRICT,
+        related_name="expressions",
+    )
+    language_code = models.CharField(max_length=32)
+    expression_type = models.CharField(max_length=64)
 
-class Contribution(models.Model):
-    agent = models.ForeignKey(Agent, on_delete=models.SET_NULL, null=True)
-    work = models.ForeignKey(Work, on_delete=models.SET_NULL, null=True, blank=True)
-    expression = models.ForeignKey(Expression, on_delete=models.SET_NULL, null=True, blank=True)
-    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
+    class Meta:
+        db_table = "expression"
+        constraints = [
+            models.CheckConstraint(
+                condition=~Q(language_code=""),
+                name="ck_expression_language_code_not_blank",
+            ),
+            models.CheckConstraint(
+                condition=~Q(expression_type=""),
+                name="ck_expression_type_not_blank",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.work.title_preferred} [{self.language_code}, {self.expression_type}]"
+
 
 class Manifestation(models.Model):
-    expression = models.ForeignKey(Expression, on_delete=models.SET_NULL, null=True, related_name='manifestations')
-    isbn = models.CharField(max_length=13, unique=True, null=True, blank=True)
-    publisher = models.CharField(max_length=255, null=True, blank=True)
-    publication_year = models.IntegerField(null=True, blank=True)
-    format = models.CharField(max_length=100, null=True, blank=True)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    isbn = models.CharField(max_length=32, null=True, blank=True)
+    publication_year = models.IntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0), MaxValueValidator(3000)],
+    )
+    edition_statement = models.TextField(null=True, blank=True)
+    nb_sesamid = models.CharField(max_length=100, null=True, blank=True)
+
+    class Meta:
+        db_table = "manifestation"
 
     def __str__(self):
-        return f"{self.isbn or 'No ISBN'} - {self.publisher}"
+        parts = []
+        if self.isbn:
+            parts.append(self.isbn)
+        if self.publication_year is not None:
+            parts.append(str(self.publication_year))
+        if self.edition_statement:
+            parts.append(self.edition_statement)
+        return " | ".join(parts) if parts else str(self.id)
+
 
 class Item(models.Model):
-    manifestation = models.ForeignKey(Manifestation, on_delete=models.SET_NULL, null=True, related_name='items')
-    is_loaned = models.BooleanField(default=False)
-    condition = models.TextField(null=True, blank=True)
-    accession_date = models.DateField(auto_now_add=True)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    manifestation = models.ForeignKey(
+        Manifestation,
+        on_delete=models.RESTRICT,
+        related_name="items",
+    )
+    shelf_location = models.CharField(max_length=255, null=True, blank=True)
+    provenance_notes = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = "item"
 
     def __str__(self):
-        return f"Item of {self.manifestation}"
+        if self.shelf_location:
+            return f"{self.shelf_location} ({self.id})"
+        return str(self.id)
+
+
+class ExpressionManifestation(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    expression = models.ForeignKey(
+        Expression,
+        on_delete=models.RESTRICT,
+        related_name="expression_manifestations",
+    )
+    manifestation = models.ForeignKey(
+        Manifestation,
+        on_delete=models.RESTRICT,
+        related_name="expression_manifestations",
+    )
+    is_primary = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = "expression_manifestation"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["expression", "manifestation"],
+                name="uq_expression_manifestation",
+            ),
+            models.UniqueConstraint(
+                fields=["manifestation"],
+                condition=Q(is_primary=True),
+                name="uq_expression_manifestation_one_primary",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.expression_id} -> {self.manifestation_id}"
