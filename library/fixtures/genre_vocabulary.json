@@ -1,0 +1,196 @@
+[
+  {
+    "model": "library.genre",
+    "pk": "crime_fiction",
+    "fields": {
+      "label": "Crime fiction",
+      "genre_facet": "form",
+      "parent_genre": null
+    }
+  },
+
+  {
+    "model": "library.genre",
+    "pk": "detective_fiction",
+    "fields": {
+      "label": "Detective fiction",
+      "genre_facet": "form",
+      "parent_genre": "crime_fiction"
+    }
+  },
+  {
+    "model": "library.genre",
+    "pk": "thriller",
+    "fields": {
+      "label": "Thriller",
+      "genre_facet": "form",
+      "parent_genre": "crime_fiction"
+    }
+  },
+
+  {
+    "model": "library.genre",
+    "pk": "classical_mystery",
+    "fields": {
+      "label": "Classical mystery",
+      "genre_facet": "form",
+      "parent_genre": "detective_fiction"
+    }
+  },
+  {
+    "model": "library.genre",
+    "pk": "modern_detective",
+    "fields": {
+      "label": "Modern detective mystery",
+      "genre_facet": "form",
+      "parent_genre": "detective_fiction"
+    }
+  },
+  {
+    "model": "library.genre",
+    "pk": "hardboiled",
+    "fields": {
+      "label": "Hardboiled fiction",
+      "genre_facet": "form",
+      "parent_genre": "detective_fiction"
+    }
+  },
+  {
+    "model": "library.genre",
+    "pk": "police_procedural",
+    "fields": {
+      "label": "Police procedural",
+      "genre_facet": "form",
+      "parent_genre": "detective_fiction"
+    }
+  },
+  {
+    "model": "library.genre",
+    "pk": "locked_room_mystery",
+    "fields": {
+      "label": "Locked-room mystery",
+      "genre_facet": "form",
+      "parent_genre": "detective_fiction"
+    }
+  },
+
+  {
+    "model": "library.genre",
+    "pk": "psychological_thriller",
+    "fields": {
+      "label": "Psychological thriller",
+      "genre_facet": "form",
+      "parent_genre": "thriller"
+    }
+  },
+  {
+    "model": "library.genre",
+    "pk": "suspense",
+    "fields": {
+      "label": "Suspense fiction",
+      "genre_facet": "form",
+      "parent_genre": "thriller"
+    }
+  },
+  {
+    "model": "library.genre",
+    "pk": "legal_thriller",
+    "fields": {
+      "label": "Legal thriller",
+      "genre_facet": "form",
+      "parent_genre": "thriller"
+    }
+  },
+  {
+    "model": "library.genre",
+    "pk": "pursuit_thriller",
+    "fields": {
+      "label": "Pursuit thriller",
+      "genre_facet": "form",
+      "parent_genre": "thriller"
+    }
+  },
+  {
+    "model": "library.genre",
+    "pk": "spy_fiction",
+    "fields": {
+      "label": "Spy fiction",
+      "genre_facet": "form",
+      "parent_genre": "thriller"
+    }
+  },
+  {
+    "model": "library.genre",
+    "pk": "heist_fiction",
+    "fields": {
+      "label": "Heist fiction",
+      "genre_facet": "form",
+      "parent_genre": "thriller"
+    }
+  },
+  {
+    "model": "library.genre",
+    "pk": "code_mystery",
+    "fields": {
+      "label": "Code mystery",
+      "genre_facet": "form",
+      "parent_genre": "thriller"
+    }
+  },
+
+  {
+    "model": "library.genre",
+    "pk": "noir",
+    "fields": {
+      "label": "Noir",
+      "genre_facet": "tone",
+      "parent_genre": null
+    }
+  },
+  {
+    "model": "library.genre",
+    "pk": "cozy",
+    "fields": {
+      "label": "Cozy mystery",
+      "genre_facet": "tone",
+      "parent_genre": null
+    }
+  },
+  {
+    "model": "library.genre",
+    "pk": "gothic",
+    "fields": {
+      "label": "Gothic crime",
+      "genre_facet": "tone",
+      "parent_genre": null
+    }
+  },
+  {
+    "model": "library.genre",
+    "pk": "supernatural",
+    "fields": {
+      "label": "Supernatural crime",
+      "genre_facet": "tone",
+      "parent_genre": null
+    }
+  },
+
+  {
+    "model": "library.genre",
+    "pk": "nordic_noir",
+    "fields": {
+      "label": "Nordic noir",
+      "genre_facet": "tone",
+      "parent_genre": "noir"
+    }
+  },
+  {
+    "model": "library.genre",
+    "pk": "domestic_noir",
+    "fields": {
+      "label": "Domestic noir",
+      "genre_facet": "tone",
+      "parent_genre": "noir"
+    }
+  }
+]

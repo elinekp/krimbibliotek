@@ -223,17 +223,23 @@ class WorkCharacterAdmin(admin.ModelAdmin):
 
 @admin.register(Genre)
 class GenreAdmin(admin.ModelAdmin):
-    list_display = ("code", "label", "parent_genre")
+    list_display = ("code", "label", "genre_facet", "parent_genre")
+    list_filter = ("genre_facet",)
     search_fields = ("code", "label")
     autocomplete_fields = ("parent_genre",)
-
-
+ 
+ 
 @admin.register(WorkGenre)
 class WorkGenreAdmin(admin.ModelAdmin):
-    list_display = ("work", "genre")
+    list_display = ("work", "genre", "genre_facet_display")
+    list_filter = ("genre__genre_facet",)
     search_fields = ("work__title_preferred", "genre__code", "genre__label")
     autocomplete_fields = ("work", "genre")
     list_select_related = ("work", "genre")
+ 
+    @admin.display(description="Fasett", ordering="genre__genre_facet")
+    def genre_facet_display(self, obj):
+        return obj.genre.get_genre_facet_display()
 
 @admin.register(AppealFactor)
 class AppealFactorAdmin(admin.ModelAdmin):

@@ -516,8 +516,17 @@ class WorkCharacter(models.Model):
         return f"{self.work} - {self.character}"
 
 class Genre(models.Model):
+    FORM = "form"
+    TONE = "tone"
+ 
+    GENRE_FACET_CHOICES = [
+        (FORM, "Form"),
+        (TONE, "Tone"),
+    ]
+ 
     code = models.CharField(primary_key=True, max_length=100)
     label = models.CharField(max_length=255)
+    genre_facet = models.CharField(max_length=16, choices=GENRE_FACET_CHOICES)
     parent_genre = models.ForeignKey(
         "self",
         on_delete=models.SET_NULL,
@@ -525,12 +534,12 @@ class Genre(models.Model):
         blank=True,
         related_name="child_genres",
     )
-
+ 
     class Meta:
-        ordering = ["code"]
-
+        ordering = ["genre_facet", "code"]
+ 
     def __str__(self):
-        return f"{self.code} - {self.label}"
+        return f"{self.code} - {self.label} [{self.genre_facet}]"
 
 
 class WorkGenre(models.Model):
