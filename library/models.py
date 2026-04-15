@@ -25,6 +25,16 @@ class Work(models.Model):
 
 
 class Expression(models.Model):
+    TEXT = "text"
+    SPOKEN_WORD = "spoken_word"
+    STILL_IMAGE = "still_image"
+
+    EXPRESSION_TYPE_CHOICES = [
+        (TEXT, "Text"),
+        (SPOKEN_WORD, "Spoken word"),
+        (STILL_IMAGE, "Still image"),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     work = models.ForeignKey(
         Work,
@@ -32,7 +42,7 @@ class Expression(models.Model):
         related_name="expressions",
     )
     language_code = models.CharField(max_length=32)
-    expression_type = models.CharField(max_length=64)
+    expression_type = models.CharField(max_length=64, choices=EXPRESSION_TYPE_CHOICES)
 
     class Meta:
         db_table = "expression"
